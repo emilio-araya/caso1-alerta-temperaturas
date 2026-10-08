@@ -1,0 +1,60 @@
+package com.example.caso1.data.model
+
+/**
+ * Estado ambiental de un galpón según reglas de negocio (umbrales).
+ */
+enum class EstadoGalpon {
+    NORMAL, ADVERTENCIA, CRITICO
+}
+
+data class Galpon(
+    val id: Int,
+    val granja: String,
+    val nombre: String,
+    val estado: EstadoGalpon = EstadoGalpon.NORMAL
+)
+
+data class Medicion(
+    val id: Int = 0,
+    val galponId: Int,
+    val temperatura: Double,
+    val humedad: Double,
+    val fechaHora: Long // epoch millis
+)
+
+enum class NivelAlerta { ADVERTENCIA, CRITICO }
+
+enum class Rol { OPERARIO, SUPERVISOR, JEFATURA }
+
+data class Alerta(
+    val id: Int = 0,
+    val galponId: Int,
+    val tipo: String,        // Ej: "TEMPERATURA_ALTA", "HUMEDAD_ALTA"
+    val nivel: NivelAlerta,
+    val activa: Boolean = true,
+    val fechaHora: Long
+)
+
+data class Evento(
+    val id: Int = 0,
+    val galponId: Int,
+    val descripcion: String,
+    val accionRegistrada: String? = null,
+    val fechaHora: Long
+)
+
+object Umbrales {
+    const val TEMP_NORMAL_MIN = 18.0
+    const val TEMP_NORMAL_MAX = 28.0
+    const val TEMP_ADVERTENCIA_MAX = 32.0
+    const val HUMEDAD_NORMAL_MIN = 50.0
+    const val HUMEDAD_NORMAL_MAX = 70.0
+    const val HUMEDAD_ADVERTENCIA_MAX = 80.0
+
+    fun evaluar(temperatura: Double, humedad: Double): EstadoGalpon = when {
+        temperatura > TEMP_ADVERTENCIA_MAX || humedad > HUMEDAD_ADVERTENCIA_MAX -> EstadoGalpon.CRITICO
+        temperatura > TEMP_NORMAL_MAX || humedad > HUMEDAD_NORMAL_MAX ||
+            temperatura < TEMP_NORMAL_MIN || humedad < HUMEDAD_NORMAL_MIN -> EstadoGalpon.ADVERTENCIA
+        else -> EstadoGalpon.NORMAL
+    }
+}
