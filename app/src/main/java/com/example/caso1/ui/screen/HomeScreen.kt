@@ -10,7 +10,7 @@ import com.example.caso1.data.repository.GalponRepository
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun HomeScreen(onCerrarSesion: () -> Unit, onVerDetalle: (Int) -> Unit = {}, onVerAlertas: () -> Unit = {}) {
+fun HomeScreen(onCerrarSesion: () -> Unit, onVerDetalle: (Int) -> Unit = {}, onVerAlertas: () -> Unit = {}, onRegistrar: () -> Unit = {}) {
     val context = androidx.compose.ui.platform.LocalContext.current
     val repo = remember { GalponRepository(DatabaseProvider.get(context)) }
 
@@ -44,6 +44,10 @@ fun HomeScreen(onCerrarSesion: () -> Unit, onVerDetalle: (Int) -> Unit = {}, onV
                         }
                     }
                 }
+            }
+            Spacer(Modifier.height(16.dp))
+            Button(onClick = onRegistrar, modifier = Modifier.fillMaxWidth()) {
+                Text("Registrar acción")
             }
         }
     }

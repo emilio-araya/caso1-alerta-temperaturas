@@ -26,4 +26,15 @@ class GalponRepository(private val db: AppDatabase) {
             }
         }
     }
+
+    suspend fun registrarAccion(galponId: Int, tipoAccion: String, descripcion: String) {
+        db.eventoDao().insertar(
+            EventoEntity(
+                galponId = galponId,
+                descripcion = "[$tipoAccion] $descripcion",
+                accionRegistrada = tipoAccion,
+                fechaHora = System.currentTimeMillis()
+            )
+        )
+    }
 }
