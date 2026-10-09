@@ -32,7 +32,10 @@ data class AlertaEntity(
     val tipo: String,
     val nivel: String,
     val activa: Boolean,
-    val fechaHora: Long
+    val fechaHora: Long,
+    // Confirmación ("acuso recibo"): la alerta sigue activa mientras dure la condición
+    val confirmadaPor: String? = null,
+    val confirmadaEn: Long? = null
 )
 
 @Entity(tableName = "eventos")
@@ -84,6 +87,9 @@ interface AlertaDao {
     @Query("UPDATE alertas SET activa = 0 WHERE id = :id")
     suspend fun desactivar(id: Int)
 
+    @Query("UPDATE alertas SET confirmadaPor = :rol, confirmadaEn = :fecha WHERE id = :id")
+    suspend fun confirmar(id: Int, rol: String, fecha: Long)
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertar(alerta: AlertaEntity): Long
 }
@@ -105,7 +111,7 @@ class EstadoConverter {
 @TypeConverters(EstadoConverter::class)
 @Database(
     entities = [GalponEntity::class, MedicionEntity::class, AlertaEntity::class, EventoEntity::class],
-    version = 2,
+    version = 3,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {

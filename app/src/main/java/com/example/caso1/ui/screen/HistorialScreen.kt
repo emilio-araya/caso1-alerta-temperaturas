@@ -94,6 +94,8 @@ private fun TarjetaAlertaHistorial(alerta: AlertaEntity, galpon: String) {
             Column(Modifier.weight(1f)) {
                 Text(tipoAlertaLegible(alerta.tipo), style = MaterialTheme.typography.titleSmall)
                 Text("$galpon · ${formatoFechaHora(alerta.fechaHora)}", style = MaterialTheme.typography.bodySmall)
+                Text(estadoConfirmacion(alerta), style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
             Text(
                 if (alerta.activa) "Activa" else "Resuelta",

@@ -1,6 +1,7 @@
 package com.example.caso1.ui.screen
 
 import androidx.compose.ui.graphics.Color
+import com.example.caso1.data.db.AlertaEntity
 import com.example.caso1.data.model.EstadoGalpon
 import com.example.caso1.data.model.Rol
 import com.example.caso1.ui.theme.EstadoAdvertencia
@@ -40,3 +41,10 @@ fun inicioDeHoy(): Long = Calendar.getInstance().apply {
     set(Calendar.HOUR_OF_DAY, 0); set(Calendar.MINUTE, 0)
     set(Calendar.SECOND, 0); set(Calendar.MILLISECOND, 0)
 }.timeInMillis
+
+/** "Pendiente de confirmar" o "Confirmada por Supervisor · 08/10 23:40". */
+fun estadoConfirmacion(alerta: AlertaEntity): String {
+    val por = alerta.confirmadaPor ?: return "Pendiente de confirmar"
+    val quien = runCatching { Rol.valueOf(por).etiqueta() }.getOrDefault(por)
+    return "Confirmada por $quien" + (alerta.confirmadaEn?.let { " · ${formatoFechaHora(it)}" } ?: "")
+}

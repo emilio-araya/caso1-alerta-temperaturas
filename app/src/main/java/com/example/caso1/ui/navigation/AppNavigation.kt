@@ -46,7 +46,7 @@ fun AppNavigation(navController: NavHostController = rememberNavController()) {
             )
         }
         composable(AppRoutes.ALERTAS) {
-            com.example.caso1.ui.screen.AlertasScreen(onBack = { navController.popBackStack() })
+            com.example.caso1.ui.screen.AlertasScreen(rol = rolActual, onBack = { navController.popBackStack() })
         }
         composable(AppRoutes.HISTORIAL) {
             com.example.caso1.ui.screen.HistorialScreen(onBack = { navController.popBackStack() })

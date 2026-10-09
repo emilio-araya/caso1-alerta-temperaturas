@@ -4,6 +4,7 @@ import com.example.caso1.data.api.MockMonitorApi
 import androidx.room.withTransaction
 import com.example.caso1.data.db.*
 import com.example.caso1.data.model.NivelAlerta
+import com.example.caso1.data.model.Rol
 import kotlinx.coroutines.flow.Flow
 
 class GalponRepository(private val db: AppDatabase) {
@@ -56,6 +57,23 @@ class GalponRepository(private val db: AppDatabase) {
         nuevasCriticas
     }
 
+    /**
+     * Confirma (acusa recibo de) una alerta y deja constancia en el historial de acciones.
+     * [detalle] es el texto legible de la alerta, armado por la UI.
+     */
+    suspend fun confirmarAlerta(alerta: AlertaEntity, rol: Rol, detalle: String) = db.withTransaction {
+        val ahora = System.currentTimeMillis()
+        db.alertaDao().confirmar(alerta.id, rol.name, ahora)
+        db.eventoDao().insertar(
+            EventoEntity(
+                galponId = alerta.galponId,
+                descripcion = "[$ACCION_CONFIRMAR] $detalle",
+                accionRegistrada = ACCION_CONFIRMAR,
+                fechaHora = ahora
+            )
+        )
+    }
+
     suspend fun registrarAccion(galponId: Int, tipoAccion: String, descripcion: String) {
         db.eventoDao().insertar(
             EventoEntity(
@@ -67,3 +85,5 @@ class GalponRepository(private val db: AppDatabase) {
         )
     }
 }
+
+const val ACCION_CONFIRMAR = "Confirmación de alerta"
