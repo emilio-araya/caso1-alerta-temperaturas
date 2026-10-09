@@ -9,7 +9,6 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.caso1.data.db.DatabaseProvider
@@ -19,9 +18,6 @@ import com.example.caso1.data.model.EstadoGalpon
 import com.example.caso1.data.model.Rol
 import com.example.caso1.data.repository.GalponRepository
 import com.example.caso1.notifications.NotificationHelper
-import com.example.caso1.ui.theme.EstadoAdvertencia
-import com.example.caso1.ui.theme.EstadoCritico
-import com.example.caso1.ui.theme.EstadoNormal
 
 /**
  * Pantalla principal. Lo que se muestra depende del perfil (punto 3.1 del caso):
@@ -36,7 +32,8 @@ fun HomeScreen(
     onCerrarSesion: () -> Unit,
     onVerDetalle: (Int) -> Unit = {},
     onVerAlertas: () -> Unit = {},
-    onRegistrar: () -> Unit = {}
+    onRegistrar: () -> Unit = {},
+    onVerHistorial: () -> Unit = {}
 ) {
     val context = androidx.compose.ui.platform.LocalContext.current
     val repo = remember { GalponRepository(DatabaseProvider.get(context)) }
@@ -50,6 +47,7 @@ fun HomeScreen(
     val galpones by repo.galpones.collectAsState(initial = emptyList())
     val ultimas by repo.ultimasMediciones.collectAsState(initial = emptyList())
     val alertas by repo.alertasActivas.collectAsState(initial = emptyList())
+    val historialAlertas by repo.alertas.collectAsState(initial = emptyList())
     val ultimaPorGalpon = remember(ultimas) { ultimas.associateBy { it.galponId } }
 
     // Supervisor y jefatura ven primero lo más grave; el operario, en orden de galpón
@@ -71,11 +69,12 @@ fun HomeScreen(
             )
         },
         bottomBar = {
-            if (rol == Rol.OPERARIO) {
-                Button(
-                    onClick = onRegistrar,
-                    modifier = Modifier.fillMaxWidth().navigationBarsPadding().padding(16.dp)
-                ) { Text("Registrar acción") }
+            val modBoton = Modifier.fillMaxWidth().navigationBarsPadding().padding(16.dp)
+            when (rol) {
+                Rol.OPERARIO -> Button(onClick = onRegistrar, modifier = modBoton) { Text("Registrar acción") }
+                Rol.SUPERVISOR, Rol.JEFATURA ->
+                    OutlinedButton(onClick = onVerHistorial, modifier = modBoton) { Text("Ver historial") }
+                null -> {}
             }
         }
     ) { padding ->
@@ -85,7 +84,14 @@ fun HomeScreen(
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             if (rol == Rol.JEFATURA && galpones.isNotEmpty()) {
-                item { ResumenJefatura(galpones, alertasActivas = alertas.size) }
+                item {
+                    val hoy = inicioDeHoy()
+                    ResumenJefatura(
+                        galpones,
+                        alertasActivas = alertas.size,
+                        alertasHoy = historialAlertas.count { it.fechaHora >= hoy }
+                    )
+                }
             }
             if (galpones.isEmpty()) {
                 item { Text("Cargando galpones…") }
@@ -120,7 +126,7 @@ private fun TarjetaGalpon(galpon: GalponEntity, ultima: MedicionEntity?, onClick
 }
 
 @Composable
-private fun ResumenJefatura(galpones: List<GalponEntity>, alertasActivas: Int) {
+private fun ResumenJefatura(galpones: List<GalponEntity>, alertasActivas: Int, alertasHoy: Int) {
     val conteo = galpones.groupingBy { it.estado }.eachCount()
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -139,20 +145,7 @@ private fun ResumenJefatura(galpones: List<GalponEntity>, alertasActivas: Int) {
             }
             Spacer(Modifier.height(8.dp))
             Text("$alertasActivas alertas activas de ${galpones.size} galpones")
+            Text("$alertasHoy alertas registradas hoy", style = MaterialTheme.typography.bodySmall)
         }
     }
 }
-
-private fun EstadoGalpon.color(): Color = when (this) {
-    EstadoGalpon.NORMAL -> EstadoNormal
-    EstadoGalpon.ADVERTENCIA -> EstadoAdvertencia
-    EstadoGalpon.CRITICO -> EstadoCritico
-}
-
-private fun EstadoGalpon.etiqueta(): String = when (this) {
-    EstadoGalpon.NORMAL -> "Normal"
-    EstadoGalpon.ADVERTENCIA -> "Advertencia"
-    EstadoGalpon.CRITICO -> "Crítico"
-}
-
-private fun Rol.etiqueta(): String = name.lowercase().replaceFirstChar { it.uppercase() }

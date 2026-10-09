@@ -1,6 +1,8 @@
 package com.example.caso1.data.api
 
 import com.example.caso1.data.model.*
+import kotlin.math.PI
+import kotlin.math.sin
 import kotlin.random.Random
 
 /**
@@ -16,6 +18,7 @@ object MockMonitorApi {
     /** Cada cuánto "llega" una medición nueva del sensor. */
     private const val INTERVALO_MS = 15 * 60_000L
     private const val HISTORIAL = 24
+    private const val INTERVALOS_POR_DIA = 24 * 60 * 60_000L / INTERVALO_MS
 
     private val galpones = listOf(
         Galpon(1, "Granja Norte", "Galpón 1"),
@@ -55,12 +58,17 @@ object MockMonitorApi {
 
     fun getEventos(): List<Evento> = emptyList()
 
+    /**
+     * Ciclo suave de 24 h desfasado por galpón, más un
+     * pequeño ruido. Así el historial parece el de un sensor real y no saltos al azar.
+     */
     private fun medicionEn(galponId: Int, intervalo: Long): Medicion {
         val r = Random(galponId * 1_000_003L + intervalo)
+        val fase = 2 * PI * (intervalo % INTERVALOS_POR_DIA) / INTERVALOS_POR_DIA + galponId * 1.3
         return Medicion(
             galponId = galponId,
-            temperatura = 22.0 + r.nextDouble(-4.0, 14.0),
-            humedad = 60.0 + r.nextDouble(-15.0, 30.0),
+            temperatura = 26.0 + 7.0 * sin(fase) + r.nextDouble(-1.5, 1.5),
+            humedad = 66.0 + 14.0 * sin(fase + PI / 3) + r.nextDouble(-3.0, 3.0),
             fechaHora = intervalo * INTERVALO_MS
         )
     }

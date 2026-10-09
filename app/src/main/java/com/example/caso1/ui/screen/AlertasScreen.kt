@@ -29,8 +29,8 @@ fun AlertasScreen(onBack: () -> Unit) {
             items(alertas) { a ->
                 Card(Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
                     Column(Modifier.padding(16.dp)) {
-                        Text("${if (a.nivel == "CRITICO") "🔴" else "🟡"} ${a.tipo}", style = MaterialTheme.typography.titleMedium)
-                        Text("Galpón ${a.galponId} · Nivel: ${a.nivel}")
+                        Text("${if (a.nivel == "CRITICO") "🔴" else "🟡"} ${tipoAlertaLegible(a.tipo)}", style = MaterialTheme.typography.titleMedium)
+                        Text("Galpón ${a.galponId} · ${formatoFechaHora(a.fechaHora)}")
                     }
                 }
             }

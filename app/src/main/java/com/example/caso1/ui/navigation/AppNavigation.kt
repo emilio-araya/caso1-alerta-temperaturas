@@ -41,11 +41,15 @@ fun AppNavigation(navController: NavHostController = rememberNavController()) {
                 },
                 onVerDetalle = { id -> navController.navigate(AppRoutes.detalle(id)) },
                 onVerAlertas = { navController.navigate(AppRoutes.ALERTAS) },
-                onRegistrar = { navController.navigate(AppRoutes.REGISTRAR) }
+                onRegistrar = { navController.navigate(AppRoutes.REGISTRAR) },
+                onVerHistorial = { navController.navigate(AppRoutes.HISTORIAL) }
             )
         }
         composable(AppRoutes.ALERTAS) {
             com.example.caso1.ui.screen.AlertasScreen(onBack = { navController.popBackStack() })
+        }
+        composable(AppRoutes.HISTORIAL) {
+            com.example.caso1.ui.screen.HistorialScreen(onBack = { navController.popBackStack() })
         }
         composable(AppRoutes.REGISTRAR) { backStack ->
             val vm: com.example.caso1.viewmodel.RegistroAccionViewModel = androidx.lifecycle.viewmodel.compose.viewModel(

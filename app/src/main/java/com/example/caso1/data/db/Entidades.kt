@@ -74,6 +74,10 @@ interface AlertaDao {
     @Query("SELECT * FROM alertas WHERE activa = 1 ORDER BY fechaHora DESC")
     fun observarActivas(): Flow<List<AlertaEntity>>
 
+    /** Todas las alertas, activas y resueltas (historial). */
+    @Query("SELECT * FROM alertas ORDER BY fechaHora DESC, id DESC")
+    fun observarTodas(): Flow<List<AlertaEntity>>
+
     @Query("SELECT * FROM alertas WHERE galponId = :galponId AND activa = 1 LIMIT 1")
     suspend fun activaDeGalpon(galponId: Int): AlertaEntity?
 
