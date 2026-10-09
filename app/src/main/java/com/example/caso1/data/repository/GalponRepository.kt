@@ -35,6 +35,7 @@ class GalponRepository(private val db: AppDatabase) {
                 }
             )
         }
+        db.medicionDao().borrarAnterioresA(System.currentTimeMillis() - RETENCION_MEDICIONES_MS)
 
         // Una alerta activa por galpón: se mantiene si sigue igual, se reemplaza si cambió
         // de tipo/nivel y se desactiva si el galpón volvió a la normalidad.
@@ -44,12 +45,12 @@ class GalponRepository(private val db: AppDatabase) {
             val actual = db.alertaDao().activaDeGalpon(g.id)
             val nueva = alertasApi[g.id]
             val sinCambios = actual != null && nueva != null &&
-                actual.tipo == nueva.tipo && actual.nivel == nueva.nivel.name
+                actual.tipo == nueva.tipo && actual.nivel == nueva.nivel
             if (sinCambios) return@forEach
 
             actual?.let { db.alertaDao().desactivar(it.id) }
             if (nueva != null) {
-                val entidad = AlertaEntity(0, nueva.galponId, nueva.tipo, nueva.nivel.name, true, nueva.fechaHora)
+                val entidad = AlertaEntity(0, nueva.galponId, nueva.tipo, nueva.nivel, true, nueva.fechaHora)
                 val id = db.alertaDao().insertar(entidad).toInt()
                 if (nueva.nivel == NivelAlerta.CRITICO) nuevasCriticas += entidad.copy(id = id)
             }
@@ -87,3 +88,6 @@ class GalponRepository(private val db: AppDatabase) {
 }
 
 const val ACCION_CONFIRMAR = "Confirmación de alerta"
+
+/** Las mediciones se guardan 24 h (96 lecturas por galpón, una cada 15 min). */
+const val RETENCION_MEDICIONES_MS = 24 * 60 * 60_000L

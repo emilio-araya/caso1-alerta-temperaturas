@@ -22,7 +22,11 @@ data class Medicion(
     val fechaHora: Long // epoch millis
 )
 
-enum class NivelAlerta { ADVERTENCIA, CRITICO }
+enum class NivelAlerta {
+    ADVERTENCIA, CRITICO;
+
+    val estado: EstadoGalpon get() = if (this == CRITICO) EstadoGalpon.CRITICO else EstadoGalpon.ADVERTENCIA
+}
 
 enum class Rol { OPERARIO, SUPERVISOR, JEFATURA }
 
@@ -35,13 +39,9 @@ data class Alerta(
     val fechaHora: Long
 )
 
-data class Evento(
-    val id: Int = 0,
-    val galponId: Int,
-    val descripcion: String,
-    val accionRegistrada: String? = null,
-    val fechaHora: Long
-)
+/** "TEMPERATURA_ALTA" → "Temperatura alta" */
+fun textoTipoAlerta(tipo: String): String =
+    tipo.lowercase().replace('_', ' ').replaceFirstChar { it.uppercase() }
 
 object Umbrales {
     const val TEMP_NORMAL_MIN = 18.0

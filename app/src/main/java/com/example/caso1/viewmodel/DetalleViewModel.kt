@@ -5,6 +5,7 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewModelScope
 import com.example.caso1.data.db.DatabaseProvider
+import com.example.caso1.data.db.GalponEntity
 import com.example.caso1.data.db.MedicionEntity
 import com.example.caso1.data.model.EstadoGalpon
 import com.example.caso1.data.model.Umbrales
@@ -14,10 +15,12 @@ import kotlinx.coroutines.flow.*
 
 data class DetalleUiState(
     val galponId: Int = 0,
+    val galpon: GalponEntity? = null,
     val mediciones: List<MedicionEntity> = emptyList(),   // de la más reciente a la más antigua
     val estado: EstadoGalpon? = null
 ) {
     val ultima: MedicionEntity? get() = mediciones.firstOrNull()
+    val nombre: String get() = galpon?.let { "${it.granja} · ${it.nombre}" } ?: "Galpón $galponId"
 }
 
 /**
@@ -32,9 +35,10 @@ class DetalleViewModel(app: Application, private val savedState: SavedStateHandl
 
     val uiState: StateFlow<DetalleUiState> = galponId
         .flatMapLatest { id ->
-            repo.mediciones(id).map { lista ->
+            combine(repo.mediciones(id), repo.galpones) { lista, galpones ->
                 DetalleUiState(
                     galponId = id,
+                    galpon = galpones.firstOrNull { it.id == id },
                     mediciones = lista,
                     estado = lista.firstOrNull()?.let { Umbrales.evaluar(it.temperatura, it.humedad) }
                 )

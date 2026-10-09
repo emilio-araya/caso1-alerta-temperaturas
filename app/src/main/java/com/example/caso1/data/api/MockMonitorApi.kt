@@ -56,8 +56,6 @@ object MockMonitorApi {
             )
         }
 
-    fun getEventos(): List<Evento> = emptyList()
-
     /** Lecturas forzadas por el modo demo, por (galpón, intervalo). */
     private val lecturasForzadas = mutableMapOf<Pair<Int, Long>, Medicion>()
 

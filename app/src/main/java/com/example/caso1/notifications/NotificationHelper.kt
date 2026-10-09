@@ -9,9 +9,17 @@ import android.os.Build
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import com.example.caso1.MainActivity
+import com.example.caso1.R
+import com.example.caso1.data.db.AlertaEntity
+import com.example.caso1.data.model.textoTipoAlerta
+import androidx.compose.ui.graphics.toArgb
+import com.example.caso1.ui.theme.AlertaRoja
 
 object NotificationHelper {
     private const val CHANNEL_ID = "alertas_criticas"
+
+    /** Extra del Intent: al tocar la notificación la app abre directo en Alertas. */
+    const val EXTRA_ABRIR_ALERTAS = "abrir_alertas"
 
     private fun crearCanal(context: Context) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -19,28 +27,33 @@ object NotificationHelper {
                 CHANNEL_ID,
                 "Alertas críticas",
                 NotificationManager.IMPORTANCE_HIGH
-            ).apply { description = "Eventos críticos de temperatura/humedad en galpones" }
+            ).apply { description = "Eventos críticos de temperatura y humedad en los galpones" }
             context.getSystemService(NotificationManager::class.java).createNotificationChannel(canal)
         }
     }
 
-    fun notificarCritico(context: Context, galponId: Int, mensaje: String) {
+    fun notificarCritico(context: Context, alerta: AlertaEntity) {
         // Android 13+: sin el permiso POST_NOTIFICATIONS concedido no se puede notificar
         if (!NotificationManagerCompat.from(context).areNotificationsEnabled()) return
         crearCanal(context)
-        val intent = Intent(context, MainActivity::class.java)
+        val intent = Intent(context, MainActivity::class.java).apply {
+            putExtra(EXTRA_ABRIR_ALERTAS, true)
+            flags = Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP
+        }
         val pending = PendingIntent.getActivity(
-            context, galponId, intent,
+            context, alerta.galponId, intent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
         val noti = NotificationCompat.Builder(context, CHANNEL_ID)
-            .setSmallIcon(android.R.drawable.stat_notify_error)
-            .setContentTitle("⚠️ Alerta crítica — Galpón $galponId")
-            .setContentText(mensaje)
+            .setSmallIcon(R.drawable.ic_warning)
+            .setColor(AlertaRoja.toArgb())
+            .setContentTitle("Alerta roja · Galpón ${alerta.galponId}")
+            .setContentText("${textoTipoAlerta(alerta.tipo)}. Toca para revisar y confirmar.")
+            .setCategory(NotificationCompat.CATEGORY_ALARM)
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setContentIntent(pending)
             .setAutoCancel(true)
             .build()
-        context.getSystemService(NotificationManager::class.java).notify(galponId, noti)
+        context.getSystemService(NotificationManager::class.java).notify(alerta.galponId, noti)
     }
 }

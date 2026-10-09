@@ -1,0 +1,379 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-09T12:02:07.874843+00:00",
+  "title": "Design System: Alerta Temperaturas",
+  "extensions": {
+    "platform": "android-compose-material3",
+    "colorMeta": {
+      "Marino": {
+        "role": "primary",
+        "displayName": "Azul marino institucional",
+        "tonalRamp": [
+          "#06121F",
+          "#0B1F36",
+          "#122C48",
+          "#1B3A5C",
+          "#3A5B7F",
+          "#6E8DB0",
+          "#A9C2DE",
+          "#D6E3F3"
+        ]
+      },
+      "MarinoProfundo": {
+        "role": "primary",
+        "displayName": "Marino profundo"
+      },
+      "TintaClara": {
+        "role": "neutral",
+        "displayName": "Tinta azul (claro)"
+      },
+      "FondoClaro": {
+        "role": "neutral",
+        "displayName": "Fondo gris frío",
+        "tonalRamp": [
+          "#0C141E",
+          "#172231",
+          "#4F5E70",
+          "#8593A4",
+          "#D5DCE4",
+          "#E1E7EE",
+          "#EDF1F5",
+          "#F3F5F8"
+        ]
+      },
+      "TintaOscura": {
+        "role": "neutral",
+        "displayName": "Tinta clara (oscuro)"
+      },
+      "FondoOscuro": {
+        "role": "neutral",
+        "displayName": "Azul noche"
+      },
+      "AlertaVerde": {
+        "role": "status",
+        "displayName": "Verde normal",
+        "tonalRamp": [
+          "#0A2E16",
+          "#104A24",
+          "#17632F",
+          "#1E7A3C",
+          "#3D9A59",
+          "#5BC981",
+          "#A6E3BA",
+          "#DDF4E4"
+        ]
+      },
+      "AlertaAmarilla": {
+        "role": "status",
+        "displayName": "Amarillo alerta",
+        "tonalRamp": [
+          "#2E2400",
+          "#4D3C00",
+          "#7A5D00",
+          "#B08800",
+          "#F2C200",
+          "#FFD94D",
+          "#FFE88F",
+          "#FFF6D1"
+        ]
+      },
+      "AlertaRoja": {
+        "role": "status",
+        "displayName": "Rojo alerta",
+        "tonalRamp": [
+          "#3D0010",
+          "#5C0012",
+          "#8A0A20",
+          "#B00E28",
+          "#C8102E",
+          "#FF7083",
+          "#FFB3BE",
+          "#FCDDE1"
+        ]
+      },
+      "TintaSobreAmarillo": {
+        "role": "status",
+        "displayName": "Tinta sobre amarillo"
+      },
+      "TextoVerdeClaro": {
+        "role": "status",
+        "displayName": "Texto verde (claro)"
+      },
+      "TextoAmarilloClaro": {
+        "role": "status",
+        "displayName": "Texto amarillo (claro)"
+      },
+      "TextoRojoClaro": {
+        "role": "status",
+        "displayName": "Texto rojo (claro)"
+      },
+      "TextoVerdeOscuro": {
+        "role": "status",
+        "displayName": "Texto verde (oscuro)"
+      },
+      "TextoAmarilloOscuro": {
+        "role": "status",
+        "displayName": "Texto amarillo (oscuro)"
+      },
+      "TextoRojoOscuro": {
+        "role": "status",
+        "displayName": "Texto rojo (oscuro)"
+      },
+      "primary-container": {
+        "role": "primary",
+        "displayName": "Contenedor marino claro"
+      },
+      "secondary": {
+        "role": "secondary",
+        "displayName": "Pizarra"
+      },
+      "secondary-container": {
+        "role": "secondary",
+        "displayName": "Pizarra clara"
+      },
+      "on-surface-variant": {
+        "role": "neutral",
+        "displayName": "Texto atenuado"
+      },
+      "surface-container-lowest": {
+        "role": "neutral",
+        "displayName": "Blanco tarjeta"
+      },
+      "outline": {
+        "role": "neutral",
+        "displayName": "Contorno"
+      },
+      "outline-variant": {
+        "role": "neutral",
+        "displayName": "Borde fino"
+      },
+      "error-container": {
+        "role": "status",
+        "displayName": "Contenedor de error"
+      },
+      "dark-primary": {
+        "role": "primary",
+        "displayName": "Azul cielo nocturno"
+      },
+      "dark-on-surface-variant": {
+        "role": "neutral",
+        "displayName": "Texto atenuado (oscuro)"
+      },
+      "dark-surface-container-lowest": {
+        "role": "neutral",
+        "displayName": "Noche profunda"
+      },
+      "dark-surface-container-low": {
+        "role": "neutral",
+        "displayName": "Tarjeta nocturna baja"
+      },
+      "dark-outline-variant": {
+        "role": "neutral",
+        "displayName": "Borde fino (oscuro)"
+      }
+    },
+    "typographyMeta": {
+      "displayLarge": {
+        "displayName": "Display grande",
+        "purpose": "Cifra de temperatura en la placa del detalle."
+      },
+      "displaySmall": {
+        "displayName": "Display chico",
+        "purpose": "Temperatura en tarjetas, conteos de jefatura, nombre de app en login."
+      },
+      "headlineMedium": {
+        "displayName": "Unidad",
+        "purpose": "' °C' junto a la cifra grande."
+      },
+      "titleLarge": {
+        "displayName": "Título de barra",
+        "purpose": "Barras superiores, títulos de sección."
+      },
+      "titleMedium": {
+        "displayName": "Título de tarjeta",
+        "purpose": "Nombre de galpón, frase principal del boletín."
+      },
+      "EstiloEstado": {
+        "displayName": "Nombre de estado",
+        "purpose": "Mayúsculas en franjas y boletín."
+      },
+      "EstiloCifra": {
+        "displayName": "Cifra tabular",
+        "purpose": "Cifras en tablas y listas."
+      }
+    },
+    "shadows": [
+      {
+        "name": "none-cards",
+        "value": "none",
+        "purpose": "Tarjetas planas: tono + borde 1dp outlineVariant."
+      },
+      {
+        "name": "m3-fab-default",
+        "value": "elevation 6dp (Material 3 por defecto)",
+        "purpose": "Solo FAB, menús y diálogos."
+      }
+    ],
+    "motion": [
+      {
+        "name": "boletin-color",
+        "value": "animateColorAsState, tween(450), FastOutSlowIn",
+        "purpose": "Único movimiento: fondo y tinta del boletín al cambiar el peor estado."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "Compact",
+        "value": "< 600dp",
+        "layout": "1 columna, NavigationBar"
+      },
+      {
+        "name": "Medium",
+        "value": "600–839dp",
+        "layout": "2 columnas, NavigationBar"
+      },
+      {
+        "name": "Expanded",
+        "value": ">= 840dp",
+        "layout": "NavigationRail, lista 42% + detalle 58%"
+      }
+    ],
+    "darkScheme": {
+      "background": "#0C141E",
+      "onSurface": "#E6ECF3",
+      "primary": "#9CC2EE",
+      "surfaceContainerLowest": "#09101A",
+      "outlineVariant": "#2A394C",
+      "error": "#FF7083",
+      "stateStripesUnchanged": true
+    }
+  },
+  "components": [
+    {
+      "name": "Franja de estado",
+      "kind": "custom",
+      "refersTo": "franja-estado-critico",
+      "description": "Encabezado de estado a todo el ancho en tarjetas de galpón y de alerta.",
+      "html": "<div class=\"ds-franja ds-roja\"><span>ALERTA ROJA</span><span class=\"ds-extra\">08:45</span></div><div class=\"ds-franja ds-amarilla\"><span>ALERTA AMARILLA</span><span class=\"ds-extra\">08:45</span></div><div class=\"ds-franja ds-verde\"><span>NORMAL</span><span class=\"ds-extra\">08:45</span></div>",
+      "css": ".ds-franja{display:flex;align-items:center;padding:7px 16px;font-family: 'Barlow Condensed', 'Roboto Condensed', sans-serif;font-weight:700;font-size:15px;line-height:18px;letter-spacing:.06em;margin-bottom:8px}.ds-franja .ds-extra{margin-left:auto;font-family: 'Barlow', 'Roboto', sans-serif;font-weight:600;font-size:13px;letter-spacing:.02em}.ds-roja{background:#C8102E;color:#fff}.ds-amarilla{background:#F2C200;color:#1A1A1A}.ds-verde{background:#1E7A3C;color:#fff}"
+    },
+    {
+      "name": "Boletín de estado",
+      "kind": "custom",
+      "refersTo": "boletin-critico",
+      "description": "Bloque de borde a borde con el color del peor galpón y una sola acción; su color cambia en 450 ms.",
+      "html": "<section class=\"ds-boletin\"><div class=\"ds-b-head\"><svg width=\"22\" height=\"22\" viewBox=\"0 -960 960 960\" fill=\"currentColor\"><path d=\"m40-120 440-760 440 760H40Zm138-80h604L480-720 178-200Zm302-40q17 0 28.5-11.5T520-280q0-17-11.5-28.5T480-320q-17 0-28.5 11.5T440-280q0 17 11.5 28.5T480-240Zm-40-120h80v-200h-80v200Z\"/></svg><span>ALERTA ROJA</span></div><p class=\"ds-b-main\">Granja Sur · Galpón 4 a 33,7 °C</p><p class=\"ds-b-body\">y 1 galpón más fuera de rango</p><p class=\"ds-b-body\">Revisa el galpón ahora y confirma la alerta.</p><div class=\"ds-b-foot\"><span>Actualizado a las 08:45</span><button class=\"ds-b-btn\">Ver alertas</button></div></section>",
+      "css": ".ds-boletin{background:#C8102E;color:#fff;padding:16px;font-family: 'Barlow', 'Roboto', sans-serif;transition:background-color 450ms cubic-bezier(.2,0,0,1),color 450ms cubic-bezier(.2,0,0,1)}.ds-b-head{display:flex;align-items:center;gap:8px;font-family: 'Barlow Condensed', 'Roboto Condensed', sans-serif;font-weight:700;font-size:22px;letter-spacing:.06em}.ds-b-main{margin:6px 0 0;font-weight:600;font-size:17px;line-height:24px}.ds-b-body{margin:0 0 4px;font-size:15px;line-height:21px}.ds-b-foot{display:flex;align-items:center;margin-top:12px;font-weight:600;font-size:13px}.ds-b-foot span{flex:1}.ds-b-btn{background:transparent;color:inherit;border:1.5px solid currentColor;border-radius:4px;padding:10px 24px;font-family: 'Barlow', 'Roboto', sans-serif;font-weight:600;font-size:15px;cursor:pointer}.ds-b-btn:hover{background:rgba(255,255,255,.08)}.ds-b-btn:focus-visible{outline:2px solid #fff;outline-offset:2px}"
+    },
+    {
+      "name": "Tarjeta de galpón",
+      "kind": "card",
+      "refersTo": "tarjeta",
+      "description": "Franja de estado, nombre, humedad, cifra condensada coloreada por umbral y escala térmica 14–38 °C.",
+      "html": "<article class=\"ds-card\" tabindex=\"0\"><div class=\"ds-cf\">ALERTA ROJA<span>08:45</span></div><div class=\"ds-cb\"><div><div class=\"ds-cn\">Galpón 4</div><div class=\"ds-cg\">Granja Sur</div><div class=\"ds-ch\"><svg width=\"16\" height=\"16\" viewBox=\"0 -960 960 960\" fill=\"currentColor\"><path d=\"M480-80q-137 0-228.5-94T160-408q0-100 79.5-217.5T480-880q161 137 240.5 254.5T800-408q0 140-91.5 234T480-80Zm0-80q104 0 172-70.5T720-408q0-73-60.5-165T480-774Q361-665 300.5-573T240-408q0 107 68 177.5T480-160Z\"/></svg> Humedad 68 %</div></div><div class=\"ds-ct\">33,7°</div></div><div class=\"ds-scale\"><i style=\"left:0;width:16.7%;background:#F2C200\"></i><i style=\"left:16.7%;width:41.6%;background:#1E7A3C\"></i><i style=\"left:58.3%;width:16.7%;background:#F2C200\"></i><i style=\"left:75%;width:25%;background:#C8102E\"></i><b style=\"left:82.1%\"></b></div><div class=\"ds-ticks\"><span style=\"left:16.7%\">18°</span><span style=\"left:58.3%\">28°</span><span style=\"left:75%\">32°</span></div></article>",
+      "css": ".ds-card{background:#fff;border:1px solid #D5DCE4;border-radius:12px;overflow:hidden;font-family: 'Barlow', 'Roboto', sans-serif;color:#13233A;max-width:360px;padding-bottom:12px;cursor:pointer}.ds-card:hover{border-color:#8593A4}.ds-card:focus-visible{outline:none;border:2px solid #1B3A5C}.ds-cf{display:flex;background:#C8102E;color:#fff;padding:7px 16px;font-family: 'Barlow Condensed', 'Roboto Condensed', sans-serif;font-weight:700;font-size:15px;letter-spacing:.06em}.ds-cf span{margin-left:auto;font-family: 'Barlow', 'Roboto', sans-serif;font-size:13px;font-weight:600}.ds-cb{display:flex;align-items:center;padding:12px 16px 0}.ds-cb>div:first-child{flex:1}.ds-cn{font-weight:600;font-size:17px}.ds-cg{font-size:13px;color:#4F5E70}.ds-ch{display:flex;align-items:center;gap:4px;margin-top:6px;color:#4F5E70;font-weight:500;font-size:15px;font-variant-numeric:tabular-nums}.ds-ct{font-family: 'Barlow Condensed', 'Roboto Condensed', sans-serif;font-weight:700;font-size:40px;color:#B00E28;font-variant-numeric:tabular-nums}.ds-scale{position:relative;height:6px;margin:11px 16px 0}.ds-scale i{position:absolute;top:0;height:6px;border-right:2px solid #fff;box-sizing:border-box}.ds-scale b{position:absolute;top:-5px;width:3px;height:8px;background:#13233A}.ds-ticks{position:relative;height:16px;margin:3px 16px 0;font-size:12px;font-weight:500;color:#4F5E70}.ds-ticks span{position:absolute;transform:translateX(-50%)}"
+    },
+    {
+      "name": "Botón primario",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Acción principal de formularios, píldora marina de 52 dp.",
+      "html": "<button class=\"ds-btn-primary\">Registrar acción</button>",
+      "css": ".ds-btn-primary{background:#1B3A5C;color:#fff;border:none;border-radius:999px;height:52px;padding:0 24px;min-width:280px;font-family: 'Barlow', 'Roboto', sans-serif;font-weight:600;font-size:15px;letter-spacing:.01em;cursor:pointer;transition:background .15s}.ds-btn-primary:hover{background:#264b73}.ds-btn-primary:focus-visible{outline:2px solid #1B3A5C;outline-offset:3px}.ds-btn-primary:active{background:#0B1F36}"
+    },
+    {
+      "name": "FAB Registrar acción",
+      "kind": "button",
+      "refersTo": "fab-registrar",
+      "description": "FAB extendido, solo para operario.",
+      "html": "<button class=\"ds-fab\"><svg width=\"24\" height=\"24\" viewBox=\"0 -960 960 960\" fill=\"currentColor\"><path d=\"M160-400v-80h280v80H160Zm0-160v-80h440v80H160Zm0-160v-80h440v80H160Zm360 560v-123l221-220q9-9 20-13t22-4q12 0 23 4.5t20 13.5l37 37q8 9 12.5 20t4.5 22q0 11-4 22.5T863-380L643-160H520Z\"/></svg>Registrar acción</button>",
+      "css": ".ds-fab{display:inline-flex;align-items:center;gap:12px;background:#1B3A5C;color:#fff;border:none;border-radius:16px;height:56px;padding:0 20px;font-family: 'Barlow', 'Roboto', sans-serif;font-weight:600;font-size:15px;box-shadow:0 3px 6px rgba(0,0,0,.2);cursor:pointer}.ds-fab:hover{box-shadow:0 5px 10px rgba(0,0,0,.24)}.ds-fab:focus-visible{outline:2px solid #1B3A5C;outline-offset:3px}"
+    },
+    {
+      "name": "Filter chip",
+      "kind": "chip",
+      "refersTo": "filter-chip",
+      "description": "Filtro de historial por galpón y tipo de acción en el registro.",
+      "html": "<div class=\"ds-chips\"><button class=\"ds-chip ds-on\"><svg width=\"18\" height=\"18\" viewBox=\"0 -960 960 960\" fill=\"currentColor\"><path d=\"M382-240 154-468l57-57 171 171 367-367 57 57-424 424Z\"/></svg>Todos</button><button class=\"ds-chip\">Galpón 1</button><button class=\"ds-chip\">Galpón 2</button></div>",
+      "css": ".ds-chips{display:flex;gap:8px}.ds-chip{display:inline-flex;align-items:center;gap:6px;height:32px;padding:0 16px;border-radius:8px;border:1px solid #8593A4;background:transparent;color:#4F5E70;font-family: 'Barlow', 'Roboto', sans-serif;font-weight:600;font-size:15px;cursor:pointer}.ds-chip:hover{background:rgba(19,35,58,.06)}.ds-chip:focus-visible{outline:2px solid #1B3A5C;outline-offset:2px}.ds-chip.ds-on{background:#E0E7F0;color:#16263A;border-color:transparent}"
+    },
+    {
+      "name": "Campo de texto",
+      "kind": "input",
+      "refersTo": "text-field",
+      "description": "OutlinedTextField M3 con error bajo el campo.",
+      "html": "<label class=\"ds-field\"><span>Observación</span><input placeholder=\"Describe la acción realizada\"/></label><p class=\"ds-err\"><svg width=\"16\" height=\"16\" viewBox=\"0 -960 960 960\" fill=\"currentColor\"><path d=\"m40-120 440-760 440 760H40Zm138-80h604L480-720 178-200Zm262-40h80v-80h-80v80Zm0-120h80v-200h-80v200Z\"/></svg>Escribe al menos 5 caracteres</p>",
+      "css": ".ds-field{display:flex;flex-direction:column;gap:4px;font-family: 'Barlow', 'Roboto', sans-serif;font-size:13px;color:#4F5E70;max-width:360px}.ds-field input{height:56px;padding:0 16px;border:1px solid #8593A4;border-radius:4px;background:transparent;font:inherit;font-size:17px;color:#13233A}.ds-field input:focus{outline:none;border:2px solid #1B3A5C}.ds-err{display:flex;align-items:center;gap:4px;margin:4px 0 0;font-family: 'Barlow', 'Roboto', sans-serif;font-size:13px;color:#C8102E}"
+    },
+    {
+      "name": "Barra de navegación",
+      "kind": "nav",
+      "refersTo": "navigation-bar",
+      "description": "Galpones, Alertas con badge, Historial; riel en Expanded.",
+      "html": "<nav class=\"ds-nav\"><a class=\"ds-on\"><span class=\"ds-ind\"><svg width=\"24\" height=\"24\" viewBox=\"0 -960 960 960\" fill=\"currentColor\"><path d=\"M320-120q-83 0-141.5-58.5T120-320q0-48 21-89.5t59-70.5v-240q0-50 35-85t85-35q50 0 85 35t35 85v240q38 29 59 70.5t21 89.5q0 83-58.5 141.5T320-120Zm-120-200h240q0-29-12.5-54T392-416l-32-24v-280q0-17-11.5-28.5T320-760q-17 0-28.5 11.5T280-720v280l-32 24q-23 17-35.5 42T200-320Z\"/></svg></span>Galpones</a><a><span class=\"ds-ind\"><svg width=\"24\" height=\"24\" viewBox=\"0 -960 960 960\" fill=\"currentColor\"><path d=\"M160-200v-80h80v-280q0-83 50-147.5T420-792v-28q0-25 17.5-42.5T480-880q25 0 42.5 17.5T540-820v28q80 20 130 84.5T720-560v280h80v80H160Zm320 120q-33 0-56.5-23.5T400-160h160q0 33-23.5 56.5T480-80ZM320-280h320v-280q0-66-47-113t-113-47q-66 0-113 47t-47 113v280Z\"/></svg><b>2</b></span>Alertas</a><a><span class=\"ds-ind\"><svg width=\"24\" height=\"24\" viewBox=\"0 -960 960 960\" fill=\"currentColor\"><path d=\"M480-120q-138 0-240.5-91.5T122-440h82q14 104 92.5 172T480-200q117 0 198.5-81.5T760-480q0-117-81.5-198.5T480-760q-69 0-129 32t-101 88h110v80H120v-240h80v94q51-64 124.5-99T480-840q75 0 140.5 28.5t114 77q48.5 48.5 77 114T840-480q0 75-28.5 140.5t-77 114q-48.5 48.5-114 77T480-120Zm112-192L440-464v-216h80v184l128 128-56 56Z\"/></svg></span>Historial</a></nav>",
+      "css": ".ds-nav{display:flex;background:#fff;padding:12px 0 16px;font-family: 'Barlow', 'Roboto', sans-serif;max-width:420px}.ds-nav a{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;font-weight:600;font-size:13px;color:#4F5E70;cursor:pointer}.ds-ind{position:relative;display:flex;align-items:center;justify-content:center;width:64px;height:32px;border-radius:16px}.ds-on .ds-ind{background:#E0E7F0;color:#16263A}.ds-on{color:#13233A}.ds-nav a:hover .ds-ind{background:rgba(19,35,58,.06)}.ds-ind b{position:absolute;top:0;right:14px;background:#C8102E;color:#fff;border-radius:8px;font-size:11px;padding:0 5px}"
+    }
+  ],
+  "narrative": {
+    "northStar": "El aviso oficial",
+    "overview": "**Creative North Star: \"El aviso oficial\"**\n\nLa app habla con la gramática de las alertas públicas chilenas: normal verde, alerta amarilla, alerta roja. El estado de un galpón no es un punto pequeño ni un acento en una tarjeta gris; es una franja plana de color pleno, a todo el ancho, con el nombre del estado en mayúsculas condensadas, como el encabezado de un boletín. Todo lo demás (fondos, tinta, controles) se mantiene en un registro institucional neutro, azul marino sobre gris frío, para que el color de estado sea lo único que grita.\n\nLa densidad es de herramienta de terreno: cifras grandes condensadas que se leen a distancia (la demo se proyecta en sala) y a pleno sol, textos en Barlow con ADN de señalética, y una escala térmica idéntica en todas las tarjetas para comparar galpones sin leer números. Hay modo claro y oscuro (azul noche); los colores de estado son los mismos en ambos y nunca dependen del color dinámico del teléfono.",
+    "keyCharacteristics": [
+      "Franjas de estado planas, a todo el ancho, en verde #1E7A3C, amarillo #F2C200 (tinta negra) y rojo #C8102E (tinta blanca).",
+      "Tinta y marca en azul marino institucional; fondos gris frío; tarjetas blancas con borde fino.",
+      "Barlow para texto, Barlow Condensed en mayúsculas para estados y en cifras grandes con números tabulares.",
+      "Plano: profundidad por tono y borde, sin sombras en tarjetas.",
+      "Un solo movimiento: el cambio de color del boletín del inicio."
+    ],
+    "rules": [
+      {
+        "name": "The Significado Fijo Rule",
+        "body": "Verde, amarillo y rojo significan normal, alerta amarilla y alerta roja, y nada más. El tema no usa color dinámico y ningún control, decoración o acento puede tomar estos colores.",
+        "section": "colors"
+      },
+      {
+        "name": "The Tinta de la Franja Rule",
+        "body": "Sobre el amarillo siempre va tinta negra (#1A1A1A); sobre verde y rojo, blanca. Para texto de estado sobre una superficie se usa `ColoresEstado.texto`, nunca `franja`.",
+        "section": "colors"
+      },
+      {
+        "name": "The Cifra Que Delata Rule",
+        "body": "Cada cifra se colorea con su propio umbral (`colorCifra(estadoTemperatura(...))`, `colorCifra(estadoHumedad(...))`): normal queda en tinta, fuera de rango toma el color de texto del estado. Así se ve si el problema es el calor o la humedad.",
+        "section": "colors"
+      },
+      {
+        "name": "The Mayúscula de Aviso Rule",
+        "body": "Solo el nombre del estado va en mayúsculas condensadas con tracking; el resto del texto va en tipo oración.",
+        "section": "typography"
+      },
+      {
+        "name": "The Cifra Tabular Rule",
+        "body": "Toda cifra que se compara (temperatura, humedad, horas, conteos) usa números tabulares y coma decimal chilena (`cifra()`: 34,2).",
+        "section": "typography"
+      },
+      {
+        "name": "The Plano Por Tono Rule",
+        "body": "La profundidad se expresa con tono y borde, no con sombra. Una tarjeta nueva es blanca con borde fino, nunca elevada.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "Do comunicar el estado con una franja plana de color pleno a todo el ancho y su nombre en `EstiloEstado` mayúsculas (\"ALERTA ROJA\", \"ALERTA AMARILLA\", \"NORMAL\").",
+      "Do obtener los colores de estado de `LocalPaletaEstados` (`estado.colores()`), usando `franja`/`sobreFranja` para bloques y `texto` para texto sobre superficie.",
+      "Do poner tinta #1A1A1A sobre el amarillo y blanco sobre verde y rojo.",
+      "Do colorear cada cifra con su propio umbral mediante `colorCifra`.",
+      "Do usar la misma `EscalaTermica` (14–38 °C) en toda tarjeta que compare galpones.",
+      "Do mantener tarjetas blancas de 12 dp con borde 1 dp `outlineVariant` y sin sombra.",
+      "Do usar números tabulares y coma decimal (`cifra()`) en toda cifra.",
+      "Do adaptar la navegación por clase de ancho: barra inferior en Compact/Medium, riel y lista + detalle en Expanded.",
+      "Do limitar cada pantalla a un solo bloque grande de color pleno (boletín en el inicio, placa en el detalle)."
+    ],
+    "donts": [
+      "Don't activar color dinámico ni reemplazar los colores de estado por tonos del tema.",
+      "Don't usar verde, amarillo o rojo como acento decorativo, en botones o en controles.",
+      "Don't representar el estado con un punto pequeño o solo con una cifra; la franja o la `MarcaEstado` siempre acompañan.",
+      "Don't escribir texto en `AlertaAmarilla` sobre fondo claro; usar `TextoAmarilloClaro`.",
+      "Don't agregar sombras a tarjetas ni animaciones fuera del cambio de color del boletín.",
+      "Don't usar íconos que no sean Material Symbols Outlined, ni caracteres como íconos."
+    ]
+  }
+}

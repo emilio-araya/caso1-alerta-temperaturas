@@ -5,6 +5,7 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.caso1.data.db.AlertaEntity
 import com.example.caso1.data.db.DatabaseProvider
+import com.example.caso1.data.model.NivelAlerta
 import com.example.caso1.data.model.Rol
 import com.example.caso1.data.repository.GalponRepository
 import kotlinx.coroutines.flow.SharingStarted
@@ -23,7 +24,7 @@ class AlertasViewModel(app: Application) : AndroidViewModel(app) {
 
     val uiState: StateFlow<AlertasUiState> = combine(repo.alertasActivas, repo.galpones) { alertas, galpones ->
         AlertasUiState(
-            alertas = alertas.sortedWith(compareBy({ it.confirmadaPor != null }, { it.nivel != "CRITICO" })),
+            alertas = alertas.sortedWith(compareBy({ it.confirmadaPor != null }, { it.nivel != NivelAlerta.CRITICO })),
             nombres = galpones.associate { it.id to "${it.granja} · ${it.nombre}" }
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), AlertasUiState())

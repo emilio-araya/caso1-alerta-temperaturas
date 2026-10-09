@@ -1,106 +1,221 @@
 package com.example.caso1.ui.screen
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.drawText
+import androidx.compose.ui.text.rememberTextMeasurer
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.caso1.R
 import com.example.caso1.data.db.MedicionEntity
 import com.example.caso1.data.model.Umbrales
-import com.example.caso1.ui.theme.EstadoAdvertencia
-import com.example.caso1.ui.theme.EstadoCritico
+import com.example.caso1.data.model.textoTipoAlerta
+import com.example.caso1.ui.theme.EstiloCifra
+import com.example.caso1.ui.theme.EstiloEstado
+import com.example.caso1.ui.theme.LocalPaletaEstados
 import com.example.caso1.viewmodel.DetalleUiState
 import com.example.caso1.viewmodel.DetalleViewModel
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun DetalleGalponScreen(onBack: () -> Unit, viewModel: DetalleViewModel = viewModel()) {
+fun DetalleGalponScreen(onBack: () -> Unit, onRegistrar: ((Int) -> Unit)?, viewModel: DetalleViewModel = viewModel()) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
 
-    Scaffold(
-        topBar = { TopAppBar(title = { Text("Galpón ${state.galponId}") }, navigationIcon = {
-            TextButton(onClick = onBack) { Text("← Volver") }
-        }) }
-    ) { padding ->
-        DetalleContenido(state, Modifier.padding(padding))
+    Scaffold(topBar = { BarraSecundaria(state.nombre, onBack) }) { padding ->
+        DetalleContenido(
+            state,
+            Modifier.padding(padding),
+            onRegistrar = onRegistrar?.let { { it(state.galponId) } }
+        )
     }
 }
 
 /** Contenido del detalle, reutilizado como panel derecho en pantallas expandidas. */
 @Composable
-fun DetalleContenido(state: DetalleUiState, modifier: Modifier = Modifier) {
+fun DetalleContenido(state: DetalleUiState, modifier: Modifier = Modifier, onRegistrar: (() -> Unit)? = null) {
     val mediciones = state.mediciones
-    LazyColumn(modifier.padding(16.dp)) {
-        val ultima = state.ultima
-        val estado = state.estado
+    val ultima = state.ultima
+    val estado = state.estado
+
+    if (ultima == null || estado == null) {
+        Box(modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
+        return
+    }
+
+    LazyColumn(modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = 24.dp)) {
+        item { PlacaEstado(ultima, state) }
+
         item {
-            if (ultima != null && estado != null) {
-                Text(estado.etiqueta(), style = MaterialTheme.typography.titleMedium, color = estado.color())
-                Text("Temperatura: ${"%.1f".format(ultima.temperatura)} °C", style = MaterialTheme.typography.headlineSmall)
-                Text("Humedad: ${"%.0f".format(ultima.humedad)} %", style = MaterialTheme.typography.titleLarge)
-                Text("Actualizado: ${formatoFechaHora(ultima.fechaHora)}")
-                Spacer(Modifier.height(16.dp))
-                Text("Temperatura (últimas ${mediciones.size} mediciones)", style = MaterialTheme.typography.titleMedium)
-                Spacer(Modifier.height(8.dp))
-                GraficoTemperatura(mediciones.reversed())
+            Column(Modifier.padding(16.dp)) {
+                Text("Temperatura", style = MaterialTheme.typography.titleMedium)
                 Text(
-                    "Líneas: advertencia ${Umbrales.TEMP_NORMAL_MAX.toInt()} °C · crítico ${Umbrales.TEMP_ADVERTENCIA_MAX.toInt()} °C",
-                    style = MaterialTheme.typography.bodySmall
+                    "Últimas ${horasCubiertas(mediciones)} · una lectura cada 15 min",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
-                Spacer(Modifier.height(16.dp))
-                Text("Historial", style = MaterialTheme.typography.titleMedium)
-            } else {
-                Text("Sin mediciones registradas")
+                Spacer(Modifier.height(12.dp))
+                Card(
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLowest),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+                ) {
+                    GraficoTemperatura(mediciones.reversed(), Modifier.padding(12.dp))
+                }
+                if (onRegistrar != null) {
+                    Spacer(Modifier.height(16.dp))
+                    FilledTonalButton(onClick = onRegistrar, modifier = Modifier.fillMaxWidth()) {
+                        Icono(R.drawable.ic_edit_note, null, Modifier.size(18.dp))
+                        Spacer(Modifier.width(8.dp))
+                        Text("Registrar acción en este galpón")
+                    }
+                }
             }
         }
-        items(mediciones) { m ->
-            Text("${formatoFechaHora(m.fechaHora)} — ${"%.1f".format(m.temperatura)} °C, ${"%.0f".format(m.humedad)} %")
-            HorizontalDivider()
+
+        item {
+            Column(Modifier.padding(start = 16.dp, end = 16.dp, top = 8.dp)) {
+                Text("Mediciones", style = MaterialTheme.typography.titleMedium)
+                Spacer(Modifier.height(8.dp))
+                FilaTabla("Hora", "Temp.", "Humedad", encabezado = true)
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+            }
+        }
+        items(mediciones, key = { it.id }) { m ->
+            Column(Modifier.padding(horizontal = 16.dp)) {
+                FilaTabla(formatoHora(m.fechaHora), "${cifra(m.temperatura)} °C", "${cifra(m.humedad, 0)} %", medicion = m)
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+            }
         }
     }
 }
 
-/** Gráfico de línea simple con Canvas, con los umbrales como líneas punteadas. */
+/** Placa del estado actual: el bloque de color pleno de esta pantalla. */
 @Composable
-private fun GraficoTemperatura(cronologicas: List<MedicionEntity>) {
+private fun PlacaEstado(ultima: MedicionEntity, state: DetalleUiState) {
+    val estado = state.estado ?: return
+    val c = estado.colores()
+    val causa = Umbrales.causa(ultima.temperatura, ultima.humedad)
+    Surface(color = c.franja, contentColor = c.sobreFranja) {
+        Column(Modifier.fillMaxWidth().padding(16.dp)) {
+            Text(
+                estado.etiqueta().uppercase() + (causa?.let { " · ${textoTipoAlerta(it).uppercase()}" } ?: ""),
+                style = EstiloEstado
+            )
+            Row(verticalAlignment = Alignment.Bottom) {
+                Text(cifra(ultima.temperatura), style = MaterialTheme.typography.displayLarge)
+                Text(" °C", style = MaterialTheme.typography.headlineMedium, modifier = Modifier.padding(bottom = 10.dp))
+            }
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icono(R.drawable.ic_water_drop, null, Modifier.size(18.dp))
+                Spacer(Modifier.width(4.dp))
+                Text("Humedad ${cifra(ultima.humedad, 0)} %", style = MaterialTheme.typography.titleMedium)
+                Spacer(Modifier.weight(1f))
+                Text("Lectura de las ${formatoHora(ultima.fechaHora)}", style = MaterialTheme.typography.labelMedium)
+            }
+        }
+    }
+}
+
+@Composable
+private fun FilaTabla(hora: String, temp: String, humedad: String, encabezado: Boolean = false, medicion: MedicionEntity? = null) {
+    val estilo = if (encabezado) MaterialTheme.typography.labelMedium else EstiloCifra
+    val tenue = MaterialTheme.colorScheme.onSurfaceVariant
+    Row(Modifier.fillMaxWidth().heightIn(min = 40.dp).padding(vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+        Text(hora, style = estilo, color = tenue, modifier = Modifier.weight(1f))
+        Text(
+            temp, style = estilo, textAlign = TextAlign.End, modifier = Modifier.weight(1f),
+            color = if (encabezado || medicion == null) tenue else colorCifra(estadoTemperatura(medicion.temperatura))
+        )
+        Text(
+            humedad, style = estilo, textAlign = TextAlign.End, modifier = Modifier.weight(1f),
+            color = if (encabezado || medicion == null) tenue else colorCifra(estadoHumedad(medicion.humedad))
+        )
+        // Estado de la lectura completa (temperatura y humedad juntas), igual que el galpón
+        Row(Modifier.weight(1f), horizontalArrangement = Arrangement.End, verticalAlignment = Alignment.CenterVertically) {
+            if (medicion == null) {
+                Text("Estado", style = estilo, color = tenue)
+            } else {
+                val e = Umbrales.evaluar(medicion.temperatura, medicion.humedad)
+                MarcaEstado(e)
+                Spacer(Modifier.width(6.dp))
+                Text(e.etiquetaCorta(), style = MaterialTheme.typography.labelMedium, color = colorCifra(e, tenue))
+            }
+        }
+    }
+}
+
+private fun horasCubiertas(mediciones: List<MedicionEntity>): String {
+    if (mediciones.size < 2) return "lecturas"
+    val horas = (mediciones.first().fechaHora - mediciones.last().fechaHora) / 3_600_000.0
+    return if (horas < 1.5) "${mediciones.size} lecturas" else "${Math.round(horas)} h"
+}
+
+/** Gráfico de línea con las zonas de los umbrales sombreadas y la última lectura marcada. */
+@Composable
+private fun GraficoTemperatura(cronologicas: List<MedicionEntity>, modifier: Modifier = Modifier) {
     if (cronologicas.size < 2) return
+    val paleta = LocalPaletaEstados.current
     val linea = MaterialTheme.colorScheme.primary
-    val ejes = MaterialTheme.colorScheme.outlineVariant
+    val fondo = MaterialTheme.colorScheme.surfaceContainerLowest
+    val estiloEje = MaterialTheme.typography.labelSmall.copy(color = MaterialTheme.colorScheme.onSurfaceVariant)
+    val medidor = rememberTextMeasurer()
     val temps = cronologicas.map { it.temperatura }
-    val min = minOf(temps.min(), Umbrales.TEMP_NORMAL_MIN) - 1
-    val max = maxOf(temps.max(), Umbrales.TEMP_ADVERTENCIA_MAX) + 1
+    // Rango ajustado a los datos, pero siempre mostrando las líneas de 28 °C y 32 °C
+    val min = minOf(temps.min(), Umbrales.TEMP_NORMAL_MAX) - 1.5
+    val max = maxOf(temps.max(), Umbrales.TEMP_ADVERTENCIA_MAX) + 1.5
+    val ultima = temps.last()
+    val colorUltima = estadoTemperatura(ultima).let { paleta.de(it).franja }
+    val descripcion = "Gráfico de temperatura: de ${cifra(temps.first())} a ${cifra(ultima)} grados"
 
-    Canvas(Modifier.fillMaxWidth().height(160.dp)) {
-        fun y(t: Double) = (size.height * (1 - (t - min) / (max - min))).toFloat()
-        val paso = size.width / (temps.size - 1)
-        val punteada = PathEffect.dashPathEffect(floatArrayOf(12f, 8f))
+    Canvas(modifier.fillMaxWidth().height(190.dp).semantics { contentDescription = descripcion }) {
+        val margenDerecho = 30.dp.toPx()
+        val margenInferior = 18.dp.toPx()
+        val ancho = size.width - margenDerecho
+        val alto = size.height - margenInferior
+        fun y(t: Double) = (alto * (1 - (t - min) / (max - min))).toFloat()
+        val paso = ancho / (temps.size - 1)
 
-        drawLine(ejes, Offset(0f, size.height), Offset(size.width, size.height))
-        listOf(Umbrales.TEMP_NORMAL_MAX to EstadoAdvertencia, Umbrales.TEMP_ADVERTENCIA_MAX to EstadoCritico)
+        // Zonas: amarilla entre 28 y 32 °C, roja sobre 32 °C
+        drawRect(paleta.advertencia.franja.copy(alpha = 0.14f), Offset(0f, y(Umbrales.TEMP_ADVERTENCIA_MAX)),
+            Size(ancho, y(Umbrales.TEMP_NORMAL_MAX) - y(Umbrales.TEMP_ADVERTENCIA_MAX)))
+        drawRect(paleta.critico.franja.copy(alpha = 0.10f), Offset(0f, 0f), Size(ancho, y(Umbrales.TEMP_ADVERTENCIA_MAX)))
+
+        val punteada = PathEffect.dashPathEffect(floatArrayOf(10f, 8f))
+        listOf(Umbrales.TEMP_NORMAL_MAX to paleta.advertencia.franja, Umbrales.TEMP_ADVERTENCIA_MAX to paleta.critico.franja)
             .forEach { (umbral, color) ->
-                drawLine(color, Offset(0f, y(umbral)), Offset(size.width, y(umbral)), strokeWidth = 2f, pathEffect = punteada)
+                drawLine(color, Offset(0f, y(umbral)), Offset(ancho, y(umbral)), strokeWidth = 2f, pathEffect = punteada)
+                val t = medidor.measure("${umbral.toInt()}°", estiloEje)
+                drawText(t, topLeft = Offset(ancho + 6.dp.toPx(), y(umbral) - t.size.height / 2f))
             }
 
         val path = Path().apply {
             temps.forEachIndexed { i, t -> if (i == 0) moveTo(0f, y(t)) else lineTo(i * paso, y(t)) }
         }
-        drawPath(path, linea, style = Stroke(width = 4f))
-        temps.forEachIndexed { i, t ->
-            val color = when {
-                t > Umbrales.TEMP_ADVERTENCIA_MAX -> EstadoCritico
-                t > Umbrales.TEMP_NORMAL_MAX -> EstadoAdvertencia
-                else -> linea
-            }
-            drawCircle(color, radius = 5f, center = Offset(i * paso, y(t)))
-        }
+        drawPath(path, linea, style = Stroke(width = 2.5.dp.toPx()))
+
+        // Última lectura: punto con anillo del color de su estado
+        val fin = Offset(ancho, y(ultima))
+        drawCircle(fondo, radius = 7.dp.toPx(), center = fin)
+        drawCircle(colorUltima, radius = 5.dp.toPx(), center = fin)
+
+        // Eje de tiempo: primera y última hora
+        val inicio = medidor.measure(formatoHora(cronologicas.first().fechaHora), estiloEje)
+        val ahora = medidor.measure(formatoHora(cronologicas.last().fechaHora), estiloEje)
+        drawText(inicio, topLeft = Offset(0f, alto + 4.dp.toPx()))
+        drawText(ahora, topLeft = Offset(ancho - ahora.size.width, alto + 4.dp.toPx()))
     }
 }

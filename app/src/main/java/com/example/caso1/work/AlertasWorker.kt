@@ -7,6 +7,7 @@ import com.example.caso1.data.db.DatabaseProvider
 import com.example.caso1.data.repository.GalponRepository
 import com.example.caso1.notifications.NotificationHelper
 import java.util.concurrent.TimeUnit
+import kotlin.coroutines.cancellation.CancellationException
 
 /**
  * Consulta la API en segundo plano (aunque la app esté cerrada), guarda en Room
@@ -16,10 +17,10 @@ class AlertasWorker(context: Context, params: WorkerParameters) : CoroutineWorke
 
     override suspend fun doWork(): Result = try {
         val repo = GalponRepository(DatabaseProvider.get(applicationContext))
-        repo.refrescar().forEach { a ->
-            NotificationHelper.notificarCritico(applicationContext, a.galponId, "${a.tipo} en galpón ${a.galponId}")
-        }
+        repo.refrescar().forEach { NotificationHelper.notificarCritico(applicationContext, it) }
         Result.success()
+    } catch (e: CancellationException) {
+        throw e   // WorkManager detuvo el trabajo: no es un error que deba reintentarse
     } catch (e: Exception) {
         Result.retry()
     }

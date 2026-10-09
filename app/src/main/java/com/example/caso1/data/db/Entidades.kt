@@ -2,6 +2,7 @@ package com.example.caso1.data.db
 
 import androidx.room.*
 import com.example.caso1.data.model.EstadoGalpon
+import com.example.caso1.data.model.NivelAlerta
 import kotlinx.coroutines.flow.Flow
 
 @Entity(tableName = "galpones")
@@ -30,7 +31,7 @@ data class AlertaEntity(
     @PrimaryKey(autoGenerate = true) val id: Int = 0,
     val galponId: Int,
     val tipo: String,
-    val nivel: String,
+    val nivel: NivelAlerta,   // se guarda como texto ("CRITICO"), igual que antes
     val activa: Boolean,
     val fechaHora: Long,
     // Confirmación ("acuso recibo"): la alerta sigue activa mientras dure la condición
@@ -67,6 +68,10 @@ interface MedicionDao {
             "(SELECT MAX(fechaHora) FROM mediciones WHERE galponId = m.galponId)"
     )
     fun observarUltimas(): Flow<List<MedicionEntity>>
+
+    /** Mantiene solo las últimas 24 h: sin esto la tabla crece para siempre. */
+    @Query("DELETE FROM mediciones WHERE fechaHora < :desde")
+    suspend fun borrarAnterioresA(desde: Long)
 
     // REPLACE sobre el índice único: no duplica y actualiza la lectura si cambió (modo demo)
     @Insert(onConflict = OnConflictStrategy.REPLACE)
@@ -107,6 +112,8 @@ interface EventoDao {
 class EstadoConverter {
     @TypeConverter fun aTexto(e: EstadoGalpon): String = e.name
     @TypeConverter fun aEnum(v: String): EstadoGalpon = EstadoGalpon.valueOf(v)
+    @TypeConverter fun nivelATexto(n: NivelAlerta): String = n.name
+    @TypeConverter fun textoANivel(v: String): NivelAlerta = NivelAlerta.valueOf(v)
 }
 
 @TypeConverters(EstadoConverter::class)

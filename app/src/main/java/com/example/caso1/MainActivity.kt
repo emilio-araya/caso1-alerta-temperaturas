@@ -1,6 +1,7 @@
 package com.example.caso1
 
 import android.Manifest
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
@@ -8,33 +9,50 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
 import androidx.compose.material3.windowsizeclass.ExperimentalMaterial3WindowSizeClassApi
 import androidx.compose.material3.windowsizeclass.calculateWindowSizeClass
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.runtime.mutableStateOf
 import androidx.core.content.ContextCompat
+import com.example.caso1.notifications.NotificationHelper
 import com.example.caso1.ui.navigation.AppNavigation
 import com.example.caso1.ui.theme.AlertaTemperaturasTheme
 import com.example.caso1.work.AlertasWorker
 
 @OptIn(ExperimentalMaterial3WindowSizeClassApi::class)
 class MainActivity : ComponentActivity() {
+
+    /** true cuando la app se abrió desde una notificación de alerta crítica. */
+    private val abrirAlertas = mutableStateOf(false)
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         pedirPermisoNotificaciones()
         AlertasWorker.programar(this)
+        leerIntent(intent)
         setContent {
             AlertaTemperaturasTheme {
                 // Se recalcula al rotar o redimensionar la ventana
                 val tamano = calculateWindowSizeClass(this)
-                AppNavigation(anchoVentana = tamano.widthSizeClass)
+                AppNavigation(
+                    anchoVentana = tamano.widthSizeClass,
+                    abrirAlertas = abrirAlertas.value,
+                    onAlertasAbiertas = { abrirAlertas.value = false }
+                )
             }
+        }
+    }
+
+    // La app ya estaba abierta y se tocó una notificación (launchMode singleTop)
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        leerIntent(intent)
+    }
+
+    private fun leerIntent(intent: Intent?) {
+        if (intent?.getBooleanExtra(NotificationHelper.EXTRA_ABRIR_ALERTAS, false) == true) {
+            abrirAlertas.value = true
+            intent.removeExtra(NotificationHelper.EXTRA_ABRIR_ALERTAS)
         }
     }
 
@@ -48,12 +66,4 @@ class MainActivity : ComponentActivity() {
 
     private val permisoNotificaciones =
         registerForActivityResult(ActivityResultContracts.RequestPermission()) { }
-}
-
-@Preview(showBackground = true)
-@Composable
-fun PreviewApp() {
-    AlertaTemperaturasTheme {
-        Text("Preview")
-    }
 }
