@@ -18,47 +18,53 @@ import com.example.caso1.data.db.MedicionEntity
 import com.example.caso1.data.model.Umbrales
 import com.example.caso1.ui.theme.EstadoAdvertencia
 import com.example.caso1.ui.theme.EstadoCritico
+import com.example.caso1.viewmodel.DetalleUiState
 import com.example.caso1.viewmodel.DetalleViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DetalleGalponScreen(onBack: () -> Unit, viewModel: DetalleViewModel = viewModel()) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
-    val mediciones = state.mediciones
-    val galponId = viewModel.galponId
 
     Scaffold(
-        topBar = { TopAppBar(title = { Text("Galpón $galponId") }, navigationIcon = {
+        topBar = { TopAppBar(title = { Text("Galpón ${state.galponId}") }, navigationIcon = {
             TextButton(onClick = onBack) { Text("← Volver") }
         }) }
     ) { padding ->
-        LazyColumn(Modifier.padding(padding).padding(16.dp)) {
-            val ultima = state.ultima
-            val estado = state.estado
-            item {
-                if (ultima != null && estado != null) {
-                    Text(estado.etiqueta(), style = MaterialTheme.typography.titleMedium, color = estado.color())
-                    Text("Temperatura: ${"%.1f".format(ultima.temperatura)} °C", style = MaterialTheme.typography.headlineSmall)
-                    Text("Humedad: ${"%.0f".format(ultima.humedad)} %", style = MaterialTheme.typography.titleLarge)
-                    Text("Actualizado: ${formatoFechaHora(ultima.fechaHora)}")
-                    Spacer(Modifier.height(16.dp))
-                    Text("Temperatura (últimas ${mediciones.size} mediciones)", style = MaterialTheme.typography.titleMedium)
-                    Spacer(Modifier.height(8.dp))
-                    GraficoTemperatura(mediciones.reversed())
-                    Text(
-                        "Líneas: advertencia ${Umbrales.TEMP_NORMAL_MAX.toInt()} °C · crítico ${Umbrales.TEMP_ADVERTENCIA_MAX.toInt()} °C",
-                        style = MaterialTheme.typography.bodySmall
-                    )
-                    Spacer(Modifier.height(16.dp))
-                    Text("Historial", style = MaterialTheme.typography.titleMedium)
-                } else {
-                    Text("Sin mediciones registradas")
-                }
+        DetalleContenido(state, Modifier.padding(padding))
+    }
+}
+
+/** Contenido del detalle, reutilizado como panel derecho en pantallas expandidas. */
+@Composable
+fun DetalleContenido(state: DetalleUiState, modifier: Modifier = Modifier) {
+    val mediciones = state.mediciones
+    LazyColumn(modifier.padding(16.dp)) {
+        val ultima = state.ultima
+        val estado = state.estado
+        item {
+            if (ultima != null && estado != null) {
+                Text(estado.etiqueta(), style = MaterialTheme.typography.titleMedium, color = estado.color())
+                Text("Temperatura: ${"%.1f".format(ultima.temperatura)} °C", style = MaterialTheme.typography.headlineSmall)
+                Text("Humedad: ${"%.0f".format(ultima.humedad)} %", style = MaterialTheme.typography.titleLarge)
+                Text("Actualizado: ${formatoFechaHora(ultima.fechaHora)}")
+                Spacer(Modifier.height(16.dp))
+                Text("Temperatura (últimas ${mediciones.size} mediciones)", style = MaterialTheme.typography.titleMedium)
+                Spacer(Modifier.height(8.dp))
+                GraficoTemperatura(mediciones.reversed())
+                Text(
+                    "Líneas: advertencia ${Umbrales.TEMP_NORMAL_MAX.toInt()} °C · crítico ${Umbrales.TEMP_ADVERTENCIA_MAX.toInt()} °C",
+                    style = MaterialTheme.typography.bodySmall
+                )
+                Spacer(Modifier.height(16.dp))
+                Text("Historial", style = MaterialTheme.typography.titleMedium)
+            } else {
+                Text("Sin mediciones registradas")
             }
-            items(mediciones) { m ->
-                Text("${formatoFechaHora(m.fechaHora)} — ${"%.1f".format(m.temperatura)} °C, ${"%.0f".format(m.humedad)} %")
-                HorizontalDivider()
-            }
+        }
+        items(mediciones) { m ->
+            Text("${formatoFechaHora(m.fechaHora)} — ${"%.1f".format(m.temperatura)} °C, ${"%.0f".format(m.humedad)} %")
+            HorizontalDivider()
         }
     }
 }

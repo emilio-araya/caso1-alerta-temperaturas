@@ -9,30 +9,40 @@ import com.example.caso1.data.db.MedicionEntity
 import com.example.caso1.data.model.EstadoGalpon
 import com.example.caso1.data.model.Umbrales
 import com.example.caso1.data.repository.GalponRepository
-import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.*
 
 data class DetalleUiState(
+    val galponId: Int = 0,
     val mediciones: List<MedicionEntity> = emptyList(),   // de la más reciente a la más antigua
     val estado: EstadoGalpon? = null
 ) {
     val ultima: MedicionEntity? get() = mediciones.firstOrNull()
 }
 
-/** El id del galpón llega por el argumento de navegación "galponId" (SavedStateHandle). */
-class DetalleViewModel(app: Application, savedState: SavedStateHandle) : AndroidViewModel(app) {
+/**
+ * El galpón llega por el argumento de navegación "galponId" (SavedStateHandle).
+ * En pantallas expandidas el panel de detalle vive dentro de Home y cambia de
+ * galpón con [seleccionar].
+ */
+@OptIn(ExperimentalCoroutinesApi::class)
+class DetalleViewModel(app: Application, private val savedState: SavedStateHandle) : AndroidViewModel(app) {
     private val repo = GalponRepository(DatabaseProvider.get(app))
+    private val galponId = savedState.getStateFlow(CLAVE_GALPON, 0)
 
-    val galponId: Int = savedState["galponId"] ?: 0
-
-    val uiState: StateFlow<DetalleUiState> = repo.mediciones(galponId)
-        .map { lista ->
-            DetalleUiState(
-                mediciones = lista,
-                estado = lista.firstOrNull()?.let { Umbrales.evaluar(it.temperatura, it.humedad) }
-            )
+    val uiState: StateFlow<DetalleUiState> = galponId
+        .flatMapLatest { id ->
+            repo.mediciones(id).map { lista ->
+                DetalleUiState(
+                    galponId = id,
+                    mediciones = lista,
+                    estado = lista.firstOrNull()?.let { Umbrales.evaluar(it.temperatura, it.humedad) }
+                )
+            }
         }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), DetalleUiState())
+
+    fun seleccionar(id: Int) { savedState[CLAVE_GALPON] = id }
+
+    private companion object { const val CLAVE_GALPON = "galponId" }
 }

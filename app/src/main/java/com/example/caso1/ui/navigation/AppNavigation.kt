@@ -3,6 +3,7 @@ package com.example.caso1.ui.navigation
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -21,6 +22,7 @@ import com.example.caso1.viewmodel.SessionViewModel
 
 @Composable
 fun AppNavigation(
+    anchoVentana: WindowWidthSizeClass = WindowWidthSizeClass.Compact,
     navController: NavHostController = rememberNavController(),
     sesion: SessionViewModel = viewModel()
 ) {
@@ -55,7 +57,8 @@ fun AppNavigation(
                 onVerDetalle = { id -> navController.navigate(AppRoutes.detalle(id)) },
                 onVerAlertas = { navController.navigate(AppRoutes.ALERTAS) },
                 onRegistrar = { navController.navigate(AppRoutes.REGISTRAR) },
-                onVerHistorial = { navController.navigate(AppRoutes.HISTORIAL) }
+                onVerHistorial = { navController.navigate(AppRoutes.HISTORIAL) },
+                anchoVentana = anchoVentana
             )
         }
         composable(AppRoutes.ALERTAS) {

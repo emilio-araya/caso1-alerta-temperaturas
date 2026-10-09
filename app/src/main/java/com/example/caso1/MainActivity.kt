@@ -12,13 +12,17 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.windowsizeclass.ExperimentalMaterial3WindowSizeClassApi
+import androidx.compose.material3.windowsizeclass.calculateWindowSizeClass
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.core.content.ContextCompat
+import com.example.caso1.ui.navigation.AppNavigation
 import com.example.caso1.ui.theme.AlertaTemperaturasTheme
 import com.example.caso1.work.AlertasWorker
 
+@OptIn(ExperimentalMaterial3WindowSizeClassApi::class)
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -27,7 +31,9 @@ class MainActivity : ComponentActivity() {
         AlertasWorker.programar(this)
         setContent {
             AlertaTemperaturasTheme {
-                com.example.caso1.ui.navigation.AppNavigation()
+                // Se recalcula al rotar o redimensionar la ventana
+                val tamano = calculateWindowSizeClass(this)
+                AppNavigation(anchoVentana = tamano.widthSizeClass)
             }
         }
     }

@@ -2,11 +2,15 @@ package com.example.caso1.ui.screen
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.GridItemSpan
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.*
+import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -17,6 +21,7 @@ import com.example.caso1.data.db.GalponEntity
 import com.example.caso1.data.db.MedicionEntity
 import com.example.caso1.data.model.EstadoGalpon
 import com.example.caso1.data.model.Rol
+import com.example.caso1.viewmodel.DetalleViewModel
 import com.example.caso1.viewmodel.HomeViewModel
 
 /**
@@ -34,6 +39,7 @@ fun HomeScreen(
     onVerAlertas: () -> Unit = {},
     onRegistrar: () -> Unit = {},
     onVerHistorial: () -> Unit = {},
+    anchoVentana: WindowWidthSizeClass = WindowWidthSizeClass.Compact,
     viewModel: HomeViewModel = viewModel()
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
@@ -89,28 +95,69 @@ fun HomeScreen(
             }
         }
     ) { padding ->
-        LazyColumn(
-            modifier = Modifier.padding(padding),
-            contentPadding = PaddingValues(16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            if (rol == Rol.JEFATURA && !state.cargando) {
-                item { ResumenJefatura(state.galpones, state.alertasActivas, state.alertasHoy) }
+        // Adaptabilidad (Guía 9): compact = 1 columna, medium = 2 columnas,
+        // expanded = lista + detalle lado a lado
+        @Composable
+        fun Listado(columnas: Int, seleccionado: Int?, modifier: Modifier, onClickGalpon: (Int) -> Unit) {
+            LazyVerticalGrid(
+                columns = GridCells.Fixed(columnas),
+                modifier = modifier,
+                contentPadding = PaddingValues(16.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                if (rol == Rol.JEFATURA && !state.cargando) {
+                    item(span = { GridItemSpan(maxLineSpan) }) {
+                        ResumenJefatura(state.galpones, state.alertasActivas, state.alertasHoy)
+                    }
+                }
+                if (state.cargando) {
+                    item(span = { GridItemSpan(maxLineSpan) }) { Text("Cargando galpones…") }
+                }
+                items(listado, key = { it.id }) { g ->
+                    TarjetaGalpon(g, state.ultimaPorGalpon[g.id], seleccionado = g.id == seleccionado) {
+                        onClickGalpon(g.id)
+                    }
+                }
             }
-            if (state.cargando) {
-                item { Text("Cargando galpones…") }
+        }
+
+        when (anchoVentana) {
+            WindowWidthSizeClass.Expanded -> {
+                val detalleVm: DetalleViewModel = viewModel(key = "panel_detalle")
+                val detalle by detalleVm.uiState.collectAsStateWithLifecycle()
+                var seleccionado by rememberSaveable { mutableStateOf<Int?>(null) }
+                val actual = seleccionado ?: listado.firstOrNull()?.id
+                LaunchedEffect(actual) { actual?.let(detalleVm::seleccionar) }
+
+                Row(Modifier.padding(padding).fillMaxSize()) {
+                    Listado(1, actual, Modifier.weight(0.4f)) { seleccionado = it }
+                    VerticalDivider()
+                    Column(Modifier.weight(0.6f)) {
+                        Text(
+                            state.galpones.firstOrNull { it.id == actual }?.let { "${it.granja} · ${it.nombre}" } ?: "",
+                            style = MaterialTheme.typography.titleLarge,
+                            modifier = Modifier.padding(start = 16.dp, top = 16.dp)
+                        )
+                        DetalleContenido(detalle)
+                    }
+                }
             }
-            items(listado, key = { it.id }) { g ->
-                TarjetaGalpon(g, state.ultimaPorGalpon[g.id]) { onVerDetalle(g.id) }
-            }
+            WindowWidthSizeClass.Medium -> Listado(2, null, Modifier.padding(padding), onVerDetalle)
+            else -> Listado(1, null, Modifier.padding(padding), onVerDetalle)
         }
     }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun TarjetaGalpon(galpon: GalponEntity, ultima: MedicionEntity?, onClick: () -> Unit) {
-    Card(onClick = onClick, modifier = Modifier.fillMaxWidth()) {
+private fun TarjetaGalpon(galpon: GalponEntity, ultima: MedicionEntity?, seleccionado: Boolean, onClick: () -> Unit) {
+    Card(
+        onClick = onClick,
+        modifier = Modifier.fillMaxWidth(),
+        colors = if (seleccionado) CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
+            else CardDefaults.cardColors()
+    ) {
         Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
             Box(Modifier.size(14.dp).background(galpon.estado.color(), CircleShape))
             Spacer(Modifier.width(12.dp))
