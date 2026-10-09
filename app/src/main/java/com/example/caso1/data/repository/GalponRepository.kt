@@ -12,6 +12,8 @@ class GalponRepository(private val db: AppDatabase) {
     val alertasActivas: Flow<List<AlertaEntity>> = db.alertaDao().observarActivas()
     val eventos: Flow<List<EventoEntity>> = db.eventoDao().observarTodos()
 
+    val ultimasMediciones: Flow<List<MedicionEntity>> = db.medicionDao().observarUltimas()
+
     fun mediciones(galponId: Int): Flow<List<MedicionEntity>> =
         db.medicionDao().observarPorGalpon(galponId)
 

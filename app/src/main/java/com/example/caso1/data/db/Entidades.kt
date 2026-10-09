@@ -58,6 +58,13 @@ interface MedicionDao {
     @Query("SELECT * FROM mediciones WHERE galponId = :galponId ORDER BY fechaHora DESC")
     fun observarPorGalpon(galponId: Int): Flow<List<MedicionEntity>>
 
+    /** La medición más reciente de cada galpón (para mostrarla en el listado). */
+    @Query(
+        "SELECT * FROM mediciones m WHERE fechaHora = " +
+            "(SELECT MAX(fechaHora) FROM mediciones WHERE galponId = m.galponId)"
+    )
+    fun observarUltimas(): Flow<List<MedicionEntity>>
+
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insertarTodas(mediciones: List<MedicionEntity>)
 }

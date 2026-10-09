@@ -32,6 +32,7 @@ fun AppNavigation(navController: NavHostController = rememberNavController()) {
         }
         composable(AppRoutes.HOME) {
             HomeScreen(
+                rol = rolActual,
                 onCerrarSesion = {
                     scope.launch { session.cerrarSesion() }
                     navController.navigate(AppRoutes.LOGIN) {
