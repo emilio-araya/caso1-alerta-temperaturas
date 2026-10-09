@@ -46,5 +46,8 @@ class RegistroAccionViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
+    /** La UI ya navegó a la confirmación: evita que vuelva a navegar al regresar con "atrás". */
+    fun navegacionRealizada() { _state.value = _state.value.copy(registrado = false) }
+
     fun limpiar() { _state.value = RegistroAccionState() }
 }

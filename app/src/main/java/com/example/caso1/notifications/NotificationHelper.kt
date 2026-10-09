@@ -7,6 +7,7 @@ import android.content.Context
 import android.content.Intent
 import android.os.Build
 import androidx.core.app.NotificationCompat
+import androidx.core.app.NotificationManagerCompat
 import com.example.caso1.MainActivity
 
 object NotificationHelper {
@@ -24,6 +25,8 @@ object NotificationHelper {
     }
 
     fun notificarCritico(context: Context, galponId: Int, mensaje: String) {
+        // Android 13+: sin el permiso POST_NOTIFICATIONS concedido no se puede notificar
+        if (!NotificationManagerCompat.from(context).areNotificationsEnabled()) return
         crearCanal(context)
         val intent = Intent(context, MainActivity::class.java)
         val pending = PendingIntent.getActivity(

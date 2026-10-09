@@ -57,4 +57,15 @@ object Umbrales {
             temperatura < TEMP_NORMAL_MIN || humedad < HUMEDAD_NORMAL_MIN -> EstadoGalpon.ADVERTENCIA
         else -> EstadoGalpon.NORMAL
     }
+
+    /** Causa de la alerta: la condición que provoca el peor nivel, o null si todo es normal. */
+    fun causa(temperatura: Double, humedad: Double): String? = when {
+        temperatura > TEMP_ADVERTENCIA_MAX -> "TEMPERATURA_ALTA"
+        humedad > HUMEDAD_ADVERTENCIA_MAX -> "HUMEDAD_ALTA"
+        temperatura > TEMP_NORMAL_MAX -> "TEMPERATURA_ALTA"
+        humedad > HUMEDAD_NORMAL_MAX -> "HUMEDAD_ALTA"
+        temperatura < TEMP_NORMAL_MIN -> "TEMPERATURA_BAJA"
+        humedad < HUMEDAD_NORMAL_MIN -> "HUMEDAD_BAJA"
+        else -> null
+    }
 }

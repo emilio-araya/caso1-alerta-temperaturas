@@ -12,7 +12,11 @@ data class GalponEntity(
     val estado: EstadoGalpon
 )
 
-@Entity(tableName = "mediciones")
+@Entity(
+    tableName = "mediciones",
+    // Una sola medición por galpón e instante: evita duplicados al refrescar
+    indices = [Index(value = ["galponId", "fechaHora"], unique = true)]
+)
 data class MedicionEntity(
     @PrimaryKey(autoGenerate = true) val id: Int = 0,
     val galponId: Int,
@@ -54,8 +58,8 @@ interface MedicionDao {
     @Query("SELECT * FROM mediciones WHERE galponId = :galponId ORDER BY fechaHora DESC")
     fun observarPorGalpon(galponId: Int): Flow<List<MedicionEntity>>
 
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertar(medicion: MedicionEntity)
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    suspend fun insertarTodas(mediciones: List<MedicionEntity>)
 }
 
 @Dao
@@ -63,8 +67,14 @@ interface AlertaDao {
     @Query("SELECT * FROM alertas WHERE activa = 1 ORDER BY fechaHora DESC")
     fun observarActivas(): Flow<List<AlertaEntity>>
 
+    @Query("SELECT * FROM alertas WHERE galponId = :galponId AND activa = 1 LIMIT 1")
+    suspend fun activaDeGalpon(galponId: Int): AlertaEntity?
+
+    @Query("UPDATE alertas SET activa = 0 WHERE id = :id")
+    suspend fun desactivar(id: Int)
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertar(alerta: AlertaEntity)
+    suspend fun insertar(alerta: AlertaEntity): Long
 }
 
 @Dao
@@ -84,7 +94,7 @@ class EstadoConverter {
 @TypeConverters(EstadoConverter::class)
 @Database(
     entities = [GalponEntity::class, MedicionEntity::class, AlertaEntity::class, EventoEntity::class],
-    version = 1,
+    version = 2,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {

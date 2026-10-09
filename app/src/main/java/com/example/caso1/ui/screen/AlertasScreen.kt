@@ -9,7 +9,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.example.caso1.data.db.DatabaseProvider
 import com.example.caso1.data.repository.GalponRepository
-import com.example.caso1.notifications.NotificationHelper
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -17,13 +16,6 @@ fun AlertasScreen(onBack: () -> Unit) {
     val context = androidx.compose.ui.platform.LocalContext.current
     val repo = remember { GalponRepository(DatabaseProvider.get(context)) }
     val alertas by repo.alertasActivas.collectAsState(initial = emptyList())
-
-    // Disparar notificación local por cada alerta crítica activa
-    LaunchedEffect(alertas) {
-        alertas.filter { it.nivel == "CRITICO" }.forEach { a ->
-            NotificationHelper.notificarCritico(context, a.galponId, "${a.tipo} en galpón ${a.galponId}")
-        }
-    }
 
     Scaffold(
         topBar = { TopAppBar(title = { Text("Alertas activas") }, navigationIcon = {

@@ -1,7 +1,9 @@
 package com.example.caso1.data.repository
 
 import com.example.caso1.data.api.MockMonitorApi
+import androidx.room.withTransaction
 import com.example.caso1.data.db.*
+import com.example.caso1.data.model.NivelAlerta
 import kotlinx.coroutines.flow.Flow
 
 class GalponRepository(private val db: AppDatabase) {
@@ -13,18 +15,42 @@ class GalponRepository(private val db: AppDatabase) {
     fun mediciones(galponId: Int): Flow<List<MedicionEntity>> =
         db.medicionDao().observarPorGalpon(galponId)
 
-    suspend fun refrescar() {
-        db.galponDao().insertarTodos(
-            MockMonitorApi.getGalpones().map { GalponEntity(it.id, it.granja, it.nombre, it.estado) }
-        )
-        MockMonitorApi.getAlertasActivas().forEach { a ->
-            db.alertaDao().insertar(AlertaEntity(0, a.galponId, a.tipo, a.nivel.name, a.activa, a.fechaHora))
+    /**
+     * Sincroniza Room con la API. Devuelve las alertas CRÍTICAS que aparecieron
+     * en este refresco (las que ya estaban activas no se repiten), para notificar
+     * solo lo nuevo.
+     */
+    suspend fun refrescar(): List<AlertaEntity> = db.withTransaction {
+        val galpones = MockMonitorApi.getGalpones()
+        db.galponDao().insertarTodos(galpones.map { GalponEntity(it.id, it.granja, it.nombre, it.estado) })
+
+        galpones.forEach { g ->
+            db.medicionDao().insertarTodas(
+                MockMonitorApi.getMediciones(g.id).map {
+                    MedicionEntity(galponId = it.galponId, temperatura = it.temperatura, humedad = it.humedad, fechaHora = it.fechaHora)
+                }
+            )
         }
-        MockMonitorApi.getGalpones().forEach { g ->
-            MockMonitorApi.getMediciones(g.id).take(5).forEach { m ->
-                db.medicionDao().insertar(MedicionEntity(0, m.galponId, m.temperatura, m.humedad, m.fechaHora))
+
+        // Una alerta activa por galpón: se mantiene si sigue igual, se reemplaza si cambió
+        // de tipo/nivel y se desactiva si el galpón volvió a la normalidad.
+        val alertasApi = MockMonitorApi.getAlertasActivas().associateBy { it.galponId }
+        val nuevasCriticas = mutableListOf<AlertaEntity>()
+        galpones.forEach { g ->
+            val actual = db.alertaDao().activaDeGalpon(g.id)
+            val nueva = alertasApi[g.id]
+            val sinCambios = actual != null && nueva != null &&
+                actual.tipo == nueva.tipo && actual.nivel == nueva.nivel.name
+            if (sinCambios) return@forEach
+
+            actual?.let { db.alertaDao().desactivar(it.id) }
+            if (nueva != null) {
+                val entidad = AlertaEntity(0, nueva.galponId, nueva.tipo, nueva.nivel.name, true, nueva.fechaHora)
+                val id = db.alertaDao().insertar(entidad).toInt()
+                if (nueva.nivel == NivelAlerta.CRITICO) nuevasCriticas += entidad.copy(id = id)
             }
         }
+        nuevasCriticas
     }
 
     suspend fun registrarAccion(galponId: Int, tipoAccion: String, descripcion: String) {

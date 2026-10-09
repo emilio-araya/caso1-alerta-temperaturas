@@ -7,6 +7,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.example.caso1.data.db.DatabaseProvider
 import com.example.caso1.data.repository.GalponRepository
+import com.example.caso1.notifications.NotificationHelper
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -14,7 +15,11 @@ fun HomeScreen(onCerrarSesion: () -> Unit, onVerDetalle: (Int) -> Unit = {}, onV
     val context = androidx.compose.ui.platform.LocalContext.current
     val repo = remember { GalponRepository(DatabaseProvider.get(context)) }
 
-    LaunchedEffect(Unit) { repo.refrescar() }
+    LaunchedEffect(Unit) {
+        repo.refrescar().forEach { a ->
+            NotificationHelper.notificarCritico(context, a.galponId, "${a.tipo} en galpón ${a.galponId}")
+        }
+    }
 
     val galpones by repo.galpones.collectAsState(initial = emptyList())
 
