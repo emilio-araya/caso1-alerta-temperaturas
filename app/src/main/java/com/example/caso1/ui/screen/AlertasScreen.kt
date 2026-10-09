@@ -8,11 +8,11 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.caso1.data.db.AlertaEntity
-import com.example.caso1.data.db.DatabaseProvider
 import com.example.caso1.data.model.Rol
-import com.example.caso1.data.repository.GalponRepository
-import kotlinx.coroutines.launch
+import com.example.caso1.viewmodel.AlertasViewModel
 
 /**
  * Alertas activas. Operario y supervisor pueden confirmarlas (acusar recibo);
@@ -20,17 +20,10 @@ import kotlinx.coroutines.launch
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AlertasScreen(rol: Rol?, onBack: () -> Unit) {
-    val context = androidx.compose.ui.platform.LocalContext.current
-    val repo = remember { GalponRepository(DatabaseProvider.get(context)) }
-    val alertas by repo.alertasActivas.collectAsState(initial = emptyList())
-    val galpones by repo.galpones.collectAsState(initial = emptyList())
-    val scope = rememberCoroutineScope()
-
-    val nombres = remember(galpones) { galpones.associate { it.id to "${it.granja} · ${it.nombre}" } }
-    // Primero las pendientes, y dentro de ellas las críticas
-    val ordenadas = alertas.sortedWith(compareBy<AlertaEntity>({ it.confirmadaPor != null }, { it.nivel != "CRITICO" }))
-    val puedeConfirmar = rol == Rol.OPERARIO || rol == Rol.SUPERVISOR
+fun AlertasScreen(rol: Rol?, onBack: () -> Unit, viewModel: AlertasViewModel = viewModel()) {
+    val state by viewModel.uiState.collectAsStateWithLifecycle()
+    val nombres = state.nombres
+    val puedeConfirmar = viewModel.puedeConfirmar(rol)
     var porConfirmar by remember { mutableStateOf<AlertaEntity?>(null) }
 
     Scaffold(
@@ -43,10 +36,10 @@ fun AlertasScreen(rol: Rol?, onBack: () -> Unit) {
             contentPadding = PaddingValues(16.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            if (alertas.isEmpty()) {
+            if (state.alertas.isEmpty()) {
                 item { Text("Sin alertas activas 🎉") }
             }
-            items(ordenadas, key = { it.id }) { a ->
+            items(state.alertas, key = { it.id }) { a ->
                 Card(Modifier.fillMaxWidth()) {
                     Column(Modifier.padding(16.dp)) {
                         Text(
@@ -88,10 +81,8 @@ fun AlertasScreen(rol: Rol?, onBack: () -> Unit) {
                 TextButton(onClick = {
                     val r = rol ?: return@TextButton
                     porConfirmar = null
-                    scope.launch {
-                        val galpon = nombres[a.galponId] ?: "Galpón ${a.galponId}"
-                        repo.confirmarAlerta(a, r, "${tipoAlertaLegible(a.tipo)} en $galpon (${r.etiqueta()})")
-                    }
+                    val galpon = nombres[a.galponId] ?: "Galpón ${a.galponId}"
+                    viewModel.confirmar(a, r, "${tipoAlertaLegible(a.tipo)} en $galpon (${r.etiqueta()})")
                 }) { Text("Confirmar") }
             },
             dismissButton = { TextButton(onClick = { porConfirmar = null }) { Text("Cancelar") } }

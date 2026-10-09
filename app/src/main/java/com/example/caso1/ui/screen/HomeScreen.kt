@@ -11,15 +11,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.example.caso1.data.db.DatabaseProvider
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.caso1.data.db.GalponEntity
 import com.example.caso1.data.db.MedicionEntity
 import com.example.caso1.data.model.EstadoGalpon
 import com.example.caso1.data.model.Rol
-import com.example.caso1.data.repository.GalponRepository
-import com.example.caso1.notifications.NotificationHelper
-import com.example.caso1.work.AlertasWorker
-import kotlinx.coroutines.launch
+import com.example.caso1.viewmodel.HomeViewModel
 
 /**
  * Pantalla principal. Lo que se muestra depende del perfil (punto 3.1 del caso):
@@ -35,29 +33,20 @@ fun HomeScreen(
     onVerDetalle: (Int) -> Unit = {},
     onVerAlertas: () -> Unit = {},
     onRegistrar: () -> Unit = {},
-    onVerHistorial: () -> Unit = {}
+    onVerHistorial: () -> Unit = {},
+    viewModel: HomeViewModel = viewModel()
 ) {
-    val context = androidx.compose.ui.platform.LocalContext.current
-    val repo = remember { GalponRepository(DatabaseProvider.get(context)) }
-
-    LaunchedEffect(Unit) {
-        repo.refrescar().forEach { a ->
-            NotificationHelper.notificarCritico(context, a.galponId, "${a.tipo} en galpón ${a.galponId}")
-        }
-    }
-
-    val galpones by repo.galpones.collectAsState(initial = emptyList())
-    val ultimas by repo.ultimasMediciones.collectAsState(initial = emptyList())
-    val alertas by repo.alertasActivas.collectAsState(initial = emptyList())
-    val historialAlertas by repo.alertas.collectAsState(initial = emptyList())
-    val ultimaPorGalpon = remember(ultimas) { ultimas.associateBy { it.galponId } }
-
+    val state by viewModel.uiState.collectAsStateWithLifecycle()
     var menuAbierto by remember { mutableStateOf(false) }
     val snackbar = remember { SnackbarHostState() }
-    val scope = rememberCoroutineScope()
+
+    LaunchedEffect(Unit) {
+        viewModel.mensajes.collect { snackbar.showSnackbar(it) }
+    }
 
     // Supervisor y jefatura ven primero lo más grave; el operario, en orden de galpón
-    val listado = if (rol == Rol.OPERARIO) galpones else galpones.sortedByDescending { it.estado.ordinal }
+    val listado = if (rol == Rol.OPERARIO) state.galpones
+        else state.galpones.sortedByDescending { it.estado.ordinal }
 
     Scaffold(
         snackbarHost = { SnackbarHost(snackbar) },
@@ -70,7 +59,7 @@ fun HomeScreen(
                     }
                 },
                 actions = {
-                    TextButton(onClick = onVerAlertas) { Text("Alertas (${alertas.size})") }
+                    TextButton(onClick = onVerAlertas) { Text("Alertas (${state.alertasActivas})") }
                     Box {
                         IconButton(onClick = { menuAbierto = true }) { Text("⋮", style = MaterialTheme.typography.titleLarge) }
                         DropdownMenu(expanded = menuAbierto, onDismissRequest = { menuAbierto = false }) {
@@ -78,10 +67,7 @@ fun HomeScreen(
                                 text = { Text("Simular evento crítico (demo)") },
                                 onClick = {
                                     menuAbierto = false
-                                    val id = AlertasWorker.simularEventoCritico(context)
-                                    scope.launch {
-                                        snackbar.showSnackbar("Evento crítico en Galpón $id dentro de 10 s. Puedes cerrar la app.")
-                                    }
+                                    viewModel.simularEventoCritico()
                                 }
                             )
                             DropdownMenuItem(text = { Text("Cerrar sesión") }, onClick = {
@@ -108,21 +94,14 @@ fun HomeScreen(
             contentPadding = PaddingValues(16.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            if (rol == Rol.JEFATURA && galpones.isNotEmpty()) {
-                item {
-                    val hoy = inicioDeHoy()
-                    ResumenJefatura(
-                        galpones,
-                        alertasActivas = alertas.size,
-                        alertasHoy = historialAlertas.count { it.fechaHora >= hoy }
-                    )
-                }
+            if (rol == Rol.JEFATURA && !state.cargando) {
+                item { ResumenJefatura(state.galpones, state.alertasActivas, state.alertasHoy) }
             }
-            if (galpones.isEmpty()) {
+            if (state.cargando) {
                 item { Text("Cargando galpones…") }
             }
             items(listado, key = { it.id }) { g ->
-                TarjetaGalpon(g, ultimaPorGalpon[g.id]) { onVerDetalle(g.id) }
+                TarjetaGalpon(g, state.ultimaPorGalpon[g.id]) { onVerDetalle(g.id) }
             }
         }
     }

@@ -13,10 +13,11 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.caso1.data.db.AlertaEntity
-import com.example.caso1.data.db.DatabaseProvider
 import com.example.caso1.data.db.EventoEntity
-import com.example.caso1.data.repository.GalponRepository
+import com.example.caso1.viewmodel.HistorialViewModel
 
 /**
  * Historial para supervisor y jefatura (F5): alertas pasadas (activas y resueltas)
@@ -24,19 +25,14 @@ import com.example.caso1.data.repository.GalponRepository
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun HistorialScreen(onBack: () -> Unit) {
-    val context = androidx.compose.ui.platform.LocalContext.current
-    val repo = remember { GalponRepository(DatabaseProvider.get(context)) }
-    val alertas by repo.alertas.collectAsState(initial = emptyList())
-    val eventos by repo.eventos.collectAsState(initial = emptyList())
-    val galpones by repo.galpones.collectAsState(initial = emptyList())
-
+fun HistorialScreen(onBack: () -> Unit, viewModel: HistorialViewModel = viewModel()) {
+    val state by viewModel.uiState.collectAsStateWithLifecycle()
     var pestana by rememberSaveable { mutableIntStateOf(0) }
-    var filtroGalpon by rememberSaveable { mutableStateOf<Int?>(null) }
 
-    val nombres = remember(galpones) { galpones.associate { it.id to "${it.granja} · ${it.nombre}" } }
-    val alertasFiltradas = alertas.filter { filtroGalpon == null || it.galponId == filtroGalpon }
-    val eventosFiltrados = eventos.filter { filtroGalpon == null || it.galponId == filtroGalpon }
+    val nombres = state.nombres
+    val filtroGalpon = state.filtroGalpon
+    val alertasFiltradas = state.alertas
+    val eventosFiltrados = state.eventos
 
     Scaffold(
         topBar = {
@@ -57,10 +53,10 @@ fun HistorialScreen(onBack: () -> Unit) {
                 Modifier.horizontalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 8.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                FilterChip(selected = filtroGalpon == null, onClick = { filtroGalpon = null },
+                FilterChip(selected = filtroGalpon == null, onClick = { viewModel.filtrarPorGalpon(null) },
                     label = { Text("Todos") })
-                galpones.forEach { g ->
-                    FilterChip(selected = filtroGalpon == g.id, onClick = { filtroGalpon = g.id },
+                state.galpones.forEach { g ->
+                    FilterChip(selected = filtroGalpon == g.id, onClick = { viewModel.filtrarPorGalpon(g.id) },
                         label = { Text(g.nombre) })
                 }
             }

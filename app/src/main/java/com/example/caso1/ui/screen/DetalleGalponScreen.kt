@@ -12,19 +12,20 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.unit.dp
-import com.example.caso1.data.db.DatabaseProvider
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.caso1.data.db.MedicionEntity
 import com.example.caso1.data.model.Umbrales
-import com.example.caso1.data.repository.GalponRepository
 import com.example.caso1.ui.theme.EstadoAdvertencia
 import com.example.caso1.ui.theme.EstadoCritico
+import com.example.caso1.viewmodel.DetalleViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun DetalleGalponScreen(galponId: Int, onBack: () -> Unit) {
-    val context = androidx.compose.ui.platform.LocalContext.current
-    val repo = remember { GalponRepository(DatabaseProvider.get(context)) }
-    val mediciones by repo.mediciones(galponId).collectAsState(initial = emptyList())
+fun DetalleGalponScreen(onBack: () -> Unit, viewModel: DetalleViewModel = viewModel()) {
+    val state by viewModel.uiState.collectAsStateWithLifecycle()
+    val mediciones = state.mediciones
+    val galponId = viewModel.galponId
 
     Scaffold(
         topBar = { TopAppBar(title = { Text("Galpón $galponId") }, navigationIcon = {
@@ -32,10 +33,10 @@ fun DetalleGalponScreen(galponId: Int, onBack: () -> Unit) {
         }) }
     ) { padding ->
         LazyColumn(Modifier.padding(padding).padding(16.dp)) {
-            val ultima = mediciones.firstOrNull()
+            val ultima = state.ultima
+            val estado = state.estado
             item {
-                if (ultima != null) {
-                    val estado = Umbrales.evaluar(ultima.temperatura, ultima.humedad)
+                if (ultima != null && estado != null) {
                     Text(estado.etiqueta(), style = MaterialTheme.typography.titleMedium, color = estado.color())
                     Text("Temperatura: ${"%.1f".format(ultima.temperatura)} °C", style = MaterialTheme.typography.headlineSmall)
                     Text("Humedad: ${"%.0f".format(ultima.humedad)} %", style = MaterialTheme.typography.titleLarge)

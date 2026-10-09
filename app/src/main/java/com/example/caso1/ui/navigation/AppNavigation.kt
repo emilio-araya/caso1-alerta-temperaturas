@@ -1,30 +1,43 @@
 package com.example.caso1.ui.navigation
 
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.*
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.example.caso1.data.SessionManager
-import com.example.caso1.data.model.Rol
-import com.example.caso1.ui.screen.HomeScreen
-import com.example.caso1.ui.screen.LoginScreen
-import kotlinx.coroutines.launch
+import androidx.navigation.navArgument
+import com.example.caso1.ui.screen.*
+import com.example.caso1.viewmodel.EstadoSesion
+import com.example.caso1.viewmodel.RegistroAccionViewModel
+import com.example.caso1.viewmodel.SessionViewModel
 
 @Composable
-fun AppNavigation(navController: NavHostController = rememberNavController()) {
-    val context = LocalContext.current
-    val session = remember { SessionManager(context) }
-    val rolActual by session.rol.collectAsState(initial = null)
-    val scope = rememberCoroutineScope()
+fun AppNavigation(
+    navController: NavHostController = rememberNavController(),
+    sesion: SessionViewModel = viewModel()
+) {
+    val estado by sesion.estado.collectAsStateWithLifecycle()
 
-    val destinoInicial = if (rolActual == null) AppRoutes.LOGIN else AppRoutes.HOME
+    // Mientras DataStore no responde no sabemos si hay sesión: así no aparece el login "de paso"
+    if (estado is EstadoSesion.Cargando) {
+        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
+        return
+    }
+    val rolActual = (estado as? EstadoSesion.Activa)?.rol
+    val destinoInicial = remember { if (rolActual == null) AppRoutes.LOGIN else AppRoutes.HOME }
 
-    NavHost(navController = navController, startDestination = AppRoutes.LOGIN) {
+    NavHost(navController = navController, startDestination = destinoInicial) {
         composable(AppRoutes.LOGIN) {
             LoginScreen { rol ->
-                scope.launch { session.guardarRol(rol) }
+                sesion.iniciarSesion(rol)
                 navController.navigate(AppRoutes.HOME) {
                     popUpTo(AppRoutes.LOGIN) { inclusive = true }
                 }
@@ -34,7 +47,7 @@ fun AppNavigation(navController: NavHostController = rememberNavController()) {
             HomeScreen(
                 rol = rolActual,
                 onCerrarSesion = {
-                    scope.launch { session.cerrarSesion() }
+                    sesion.cerrarSesion()
                     navController.navigate(AppRoutes.LOGIN) {
                         popUpTo(AppRoutes.HOME) { inclusive = true }
                     }
@@ -46,40 +59,30 @@ fun AppNavigation(navController: NavHostController = rememberNavController()) {
             )
         }
         composable(AppRoutes.ALERTAS) {
-            com.example.caso1.ui.screen.AlertasScreen(rol = rolActual, onBack = { navController.popBackStack() })
+            AlertasScreen(rol = rolActual, onBack = { navController.popBackStack() })
         }
         composable(AppRoutes.HISTORIAL) {
-            com.example.caso1.ui.screen.HistorialScreen(onBack = { navController.popBackStack() })
+            HistorialScreen(onBack = { navController.popBackStack() })
         }
-        composable(AppRoutes.REGISTRAR) { backStack ->
-            val vm: com.example.caso1.viewmodel.RegistroAccionViewModel = androidx.lifecycle.viewmodel.compose.viewModel(
-                navController.getBackStackEntry(AppRoutes.HOME)
-            )
-            com.example.caso1.ui.screen.RegistroAccionScreen(viewModel = vm) {
+        // Registro y confirmación comparten el ViewModel, ligado a la entrada HOME de la pila
+        composable(AppRoutes.REGISTRAR) {
+            val vm: RegistroAccionViewModel = viewModel(navController.getBackStackEntry(AppRoutes.HOME))
+            RegistroAccionScreen(viewModel = vm) {
                 navController.navigate(AppRoutes.CONFIRMAR)
             }
         }
         composable(AppRoutes.CONFIRMAR) {
-            val vm: com.example.caso1.viewmodel.RegistroAccionViewModel = androidx.lifecycle.viewmodel.compose.viewModel(
-                navController.getBackStackEntry(AppRoutes.HOME)
-            )
-            com.example.caso1.ui.screen.ConfirmacionScreen(viewModel = vm) {
+            val vm: RegistroAccionViewModel = viewModel(navController.getBackStackEntry(AppRoutes.HOME))
+            ConfirmacionScreen(viewModel = vm) {
                 navController.popBackStack(AppRoutes.HOME, inclusive = false)
             }
         }
+        // DetalleViewModel lee "galponId" desde su SavedStateHandle
         composable(
             AppRoutes.DETALLE,
-            arguments = listOf(androidx.navigation.navArgument("galponId") { type = androidx.navigation.NavType.IntType })
-        ) { backStack ->
-            val id = backStack.arguments?.getInt("galponId") ?: 0
-            com.example.caso1.ui.screen.DetalleGalponScreen(galponId = id, onBack = { navController.popBackStack() })
-        }
-    }
-
-    // Si ya hay sesión guardada, saltar directo al Home
-    LaunchedEffect(rolActual) {
-        if (rolActual != null && navController.currentDestination?.route == AppRoutes.LOGIN) {
-            navController.navigate(AppRoutes.HOME) { popUpTo(AppRoutes.LOGIN) { inclusive = true } }
+            arguments = listOf(navArgument("galponId") { type = NavType.IntType })
+        ) {
+            DetalleGalponScreen(onBack = { navController.popBackStack() })
         }
     }
 }

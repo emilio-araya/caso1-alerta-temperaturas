@@ -36,12 +36,6 @@ fun tipoAlertaLegible(tipo: String): String =
 fun formatoFechaHora(millis: Long): String =
     SimpleDateFormat("dd/MM HH:mm", Locale.getDefault()).format(Date(millis))
 
-/** Milisegundos del inicio del día de hoy (hora local). */
-fun inicioDeHoy(): Long = Calendar.getInstance().apply {
-    set(Calendar.HOUR_OF_DAY, 0); set(Calendar.MINUTE, 0)
-    set(Calendar.SECOND, 0); set(Calendar.MILLISECOND, 0)
-}.timeInMillis
-
 /** "Pendiente de confirmar" o "Confirmada por Supervisor · 08/10 23:40". */
 fun estadoConfirmacion(alerta: AlertaEntity): String {
     val por = alerta.confirmadaPor ?: return "Pendiente de confirmar"
