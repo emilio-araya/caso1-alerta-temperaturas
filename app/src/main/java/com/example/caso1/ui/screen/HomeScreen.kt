@@ -18,6 +18,8 @@ import com.example.caso1.data.model.EstadoGalpon
 import com.example.caso1.data.model.Rol
 import com.example.caso1.data.repository.GalponRepository
 import com.example.caso1.notifications.NotificationHelper
+import com.example.caso1.work.AlertasWorker
+import kotlinx.coroutines.launch
 
 /**
  * Pantalla principal. Lo que se muestra depende del perfil (punto 3.1 del caso):
@@ -50,10 +52,15 @@ fun HomeScreen(
     val historialAlertas by repo.alertas.collectAsState(initial = emptyList())
     val ultimaPorGalpon = remember(ultimas) { ultimas.associateBy { it.galponId } }
 
+    var menuAbierto by remember { mutableStateOf(false) }
+    val snackbar = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
+
     // Supervisor y jefatura ven primero lo más grave; el operario, en orden de galpón
     val listado = if (rol == Rol.OPERARIO) galpones else galpones.sortedByDescending { it.estado.ordinal }
 
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbar) },
         topBar = {
             TopAppBar(
                 title = {
@@ -64,7 +71,25 @@ fun HomeScreen(
                 },
                 actions = {
                     TextButton(onClick = onVerAlertas) { Text("Alertas (${alertas.size})") }
-                    TextButton(onClick = onCerrarSesion) { Text("Salir") }
+                    Box {
+                        IconButton(onClick = { menuAbierto = true }) { Text("⋮", style = MaterialTheme.typography.titleLarge) }
+                        DropdownMenu(expanded = menuAbierto, onDismissRequest = { menuAbierto = false }) {
+                            DropdownMenuItem(
+                                text = { Text("Simular evento crítico (demo)") },
+                                onClick = {
+                                    menuAbierto = false
+                                    val id = AlertasWorker.simularEventoCritico(context)
+                                    scope.launch {
+                                        snackbar.showSnackbar("Evento crítico en Galpón $id dentro de 10 s. Puedes cerrar la app.")
+                                    }
+                                }
+                            )
+                            DropdownMenuItem(text = { Text("Cerrar sesión") }, onClick = {
+                                menuAbierto = false
+                                onCerrarSesion()
+                            })
+                        }
+                    }
                 }
             )
         },

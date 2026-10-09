@@ -68,7 +68,8 @@ interface MedicionDao {
     )
     fun observarUltimas(): Flow<List<MedicionEntity>>
 
-    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    // REPLACE sobre el índice único: no duplica y actualiza la lectura si cambió (modo demo)
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertarTodas(mediciones: List<MedicionEntity>)
 }
 

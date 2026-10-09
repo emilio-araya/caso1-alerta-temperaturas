@@ -58,11 +58,29 @@ object MockMonitorApi {
 
     fun getEventos(): List<Evento> = emptyList()
 
+    /** Lecturas forzadas por el modo demo, por (galpón, intervalo). */
+    private val lecturasForzadas = mutableMapOf<Pair<Int, Long>, Medicion>()
+
+    /**
+     * Modo demo: fuerza un pico de temperatura crítico en un galpón que hoy no esté
+     * crítico (o en el 1 si todos lo están). Devuelve el id del galpón afectado.
+     * Solo vive en memoria: se pierde si el sistema mata el proceso.
+     */
+    @Synchronized
+    fun simularEventoCritico(): Int {
+        val intervalo = System.currentTimeMillis() / INTERVALO_MS
+        val galponId = getGalpones().firstOrNull { it.estado != EstadoGalpon.CRITICO }?.id ?: galpones.first().id
+        val normal = medicionEn(galponId, intervalo)
+        lecturasForzadas[galponId to intervalo] = normal.copy(temperatura = 35.0 + Random.nextDouble(0.0, 1.5))
+        return galponId
+    }
+
     /**
      * Ciclo suave de 24 h desfasado por galpón, más un
      * pequeño ruido. Así el historial parece el de un sensor real y no saltos al azar.
      */
     private fun medicionEn(galponId: Int, intervalo: Long): Medicion {
+        lecturasForzadas[galponId to intervalo]?.let { return it }
         val r = Random(galponId * 1_000_003L + intervalo)
         val fase = 2 * PI * (intervalo % INTERVALOS_POR_DIA) / INTERVALOS_POR_DIA + galponId * 1.3
         return Medicion(

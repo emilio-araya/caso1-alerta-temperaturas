@@ -17,12 +17,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.core.content.ContextCompat
 import com.example.caso1.ui.theme.AlertaTemperaturasTheme
+import com.example.caso1.work.AlertasWorker
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         pedirPermisoNotificaciones()
+        AlertasWorker.programar(this)
         setContent {
             AlertaTemperaturasTheme {
                 com.example.caso1.ui.navigation.AppNavigation()
