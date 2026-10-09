@@ -13,6 +13,7 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -27,19 +28,18 @@ import com.example.caso1.viewmodel.HistorialViewModel
  * y acciones registradas por los operarios, con filtro por galpón.
  */
 @Composable
-fun HistorialScreen(marco: Marco, viewModel: HistorialViewModel = viewModel()) {
+fun HistorialScreen(marco: Marco, viewModel: HistorialViewModel = viewModel(factory = HistorialViewModel.Factory)) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     var pestana by rememberSaveable { mutableIntStateOf(0) }
-    val nombres = state.nombres
     val filtroGalpon = state.filtroGalpon
 
-    PantallaPrincipal(marco = marco, actual = Destino.HISTORIAL, titulo = "Historial") { padding ->
+    PantallaPrincipal(marco = marco, actual = Destino.HISTORIAL, titulo = stringResource(R.string.historial_titulo)) { padding ->
         Column(Modifier.padding(padding)) {
             PrimaryTabRow(selectedTabIndex = pestana, containerColor = MaterialTheme.colorScheme.surface) {
                 Tab(selected = pestana == 0, onClick = { pestana = 0 },
-                    text = { Text("Alertas (${state.alertas.size})") })
+                    text = { Text(stringResource(R.string.historial_tab_alertas, state.alertas.size)) })
                 Tab(selected = pestana == 1, onClick = { pestana = 1 },
-                    text = { Text("Acciones (${state.eventos.size})") })
+                    text = { Text(stringResource(R.string.historial_tab_acciones, state.eventos.size)) })
             }
 
             Row(
@@ -47,7 +47,7 @@ fun HistorialScreen(marco: Marco, viewModel: HistorialViewModel = viewModel()) {
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 FilterChip(selected = filtroGalpon == null, onClick = { viewModel.filtrarPorGalpon(null) },
-                    label = { Text("Todos") })
+                    label = { Text(stringResource(R.string.historial_todos)) })
                 state.galpones.forEach { g ->
                     FilterChip(
                         selected = filtroGalpon == g.id,
@@ -64,19 +64,19 @@ fun HistorialScreen(marco: Marco, viewModel: HistorialViewModel = viewModel()) {
             ) {
                 if (pestana == 0) {
                     if (state.alertas.isEmpty()) item {
-                        EstadoVacio(R.drawable.ic_history, "Sin alertas registradas",
-                            "Aquí quedan todas las alertas, activas y resueltas.")
+                        EstadoVacio(R.drawable.ic_history, stringResource(R.string.historial_sin_alertas_titulo),
+                            stringResource(R.string.historial_sin_alertas_texto))
                     }
                     items(state.alertas, key = { it.id }) { a ->
-                        TarjetaAlertaHistorial(a, nombres[a.galponId] ?: "Galpón ${a.galponId}")
+                        TarjetaAlertaHistorial(a, nombreGalpon(state.galponesPorId[a.galponId], a.galponId))
                     }
                 } else {
                     if (state.eventos.isEmpty()) item {
-                        EstadoVacio(R.drawable.ic_edit_note, "Aún no hay acciones",
-                            "Las acciones que registren los operarios y las alertas confirmadas aparecerán aquí.")
+                        EstadoVacio(R.drawable.ic_edit_note, stringResource(R.string.historial_sin_acciones_titulo),
+                            stringResource(R.string.historial_sin_acciones_texto))
                     }
                     items(state.eventos, key = { it.id }) { e ->
-                        TarjetaEvento(e, nombres[e.galponId] ?: "Galpón ${e.galponId}")
+                        TarjetaEvento(e, nombreGalpon(state.galponesPorId[e.galponId], e.galponId))
                     }
                 }
             }
@@ -96,13 +96,13 @@ private fun TarjetaAlertaHistorial(alerta: AlertaEntity, galpon: String) {
             Spacer(Modifier.width(12.dp))
             Column(Modifier.weight(1f)) {
                 Text(tipoAlertaLegible(alerta.tipo), style = MaterialTheme.typography.titleSmall)
-                Text("$galpon · ${formatoFechaHora(alerta.fechaHora)}", style = MaterialTheme.typography.bodySmall)
-                Text(estadoConfirmacion(alerta), style = MaterialTheme.typography.bodySmall,
+                Text(stringResource(R.string.meta_galpon_fecha, galpon, formatoFechaHora(alerta.fechaHora)), style = MaterialTheme.typography.bodySmall)
+                Text(textoConfirmacion(alerta.confirmadaPor, alerta.confirmadaEn), style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
             Spacer(Modifier.width(8.dp))
             Text(
-                if (alerta.activa) alerta.nivel.etiqueta() else "Resuelta",
+                if (alerta.activa) alerta.nivel.etiqueta() else stringResource(R.string.historial_resuelta),
                 style = MaterialTheme.typography.labelLarge,
                 color = if (alerta.activa) alerta.nivel.colores().texto else MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -112,8 +112,9 @@ private fun TarjetaAlertaHistorial(alerta: AlertaEntity, galpon: String) {
 
 @Composable
 private fun TarjetaEvento(evento: EventoEntity, galpon: String) {
-    val accion = evento.accionRegistrada ?: "Evento"
-    val esConfirmacion = accion == ACCION_CONFIRMAR
+    val codigo = evento.accionRegistrada
+    // Las filas antiguas guardaban el texto "Confirmación de alerta" en vez del código
+    val esConfirmacion = codigo == ACCION_CONFIRMAR || codigo == "Confirmación de alerta"
     Card(
         Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLowest),
@@ -131,9 +132,10 @@ private fun TarjetaEvento(evento: EventoEntity, galpon: String) {
             }
             Spacer(Modifier.width(12.dp))
             Column(Modifier.weight(1f)) {
-                Text(accion, style = MaterialTheme.typography.titleSmall)
-                Text(evento.descripcion.removePrefix("[$accion] "), style = MaterialTheme.typography.bodyMedium)
-                Text("$galpon · ${formatoFechaHora(evento.fechaHora)}", style = MaterialTheme.typography.bodySmall,
+                Text(accionLegible(codigo), style = MaterialTheme.typography.titleSmall)
+                // Las filas antiguas llevaban el tipo como prefijo "[Ventilación] …"
+                Text(evento.descripcion.removePrefix("[$codigo] "), style = MaterialTheme.typography.bodyMedium)
+                Text(stringResource(R.string.meta_galpon_fecha, galpon, formatoFechaHora(evento.fechaHora)), style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }

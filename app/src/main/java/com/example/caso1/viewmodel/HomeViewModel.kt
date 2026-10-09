@@ -1,15 +1,16 @@
 package com.example.caso1.viewmodel
 
-import android.app.Application
-import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.caso1.data.db.DatabaseProvider
+import androidx.lifecycle.viewmodel.initializer
+import androidx.lifecycle.viewmodel.viewModelFactory
+import com.example.caso1.R
+import com.example.caso1.contenedor
+import com.example.caso1.data.db.AlertaEntity
 import com.example.caso1.data.db.GalponEntity
 import com.example.caso1.data.db.MedicionEntity
 import com.example.caso1.data.model.EstadoGalpon
-import com.example.caso1.data.repository.GalponRepository
-import com.example.caso1.notifications.NotificationHelper
-import com.example.caso1.work.AlertasWorker
+import com.example.caso1.data.repository.RepositorioGalpones
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import java.util.Calendar
@@ -33,8 +34,11 @@ data class HomeUiState(
     val boletin: Boletin? = null
 )
 
-class HomeViewModel(app: Application) : AndroidViewModel(app) {
-    private val repo = GalponRepository(DatabaseProvider.get(app))
+class HomeViewModel(
+    private val repo: RepositorioGalpones,
+    private val notificarCritico: (AlertaEntity) -> Unit,
+    private val simularEvento: () -> Int
+) : ViewModel() {
 
     val uiState: StateFlow<HomeUiState> = combine(
         repo.galpones, repo.ultimasMediciones, repo.alertasActivas, repo.alertas
@@ -52,20 +56,18 @@ class HomeViewModel(app: Application) : AndroidViewModel(app) {
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), HomeUiState())
 
     /** Mensajes de una sola vez para el Snackbar. */
-    private val _mensajes = MutableSharedFlow<String>()
-    val mensajes: SharedFlow<String> = _mensajes
+    private val _mensajes = MutableSharedFlow<TextoUi>()
+    val mensajes: SharedFlow<TextoUi> = _mensajes
 
     init { refrescar() }
 
     fun refrescar() {
-        viewModelScope.launch {
-            repo.refrescar().forEach { NotificationHelper.notificarCritico(getApplication(), it) }
-        }
+        viewModelScope.launch { repo.refrescar().forEach(notificarCritico) }
     }
 
     fun simularEventoCritico() {
-        val id = AlertasWorker.simularEventoCritico(getApplication())
-        viewModelScope.launch { _mensajes.emit("Pico de calor simulado en el Galpón $id. La alerta llega en 10 s, aunque cierres la app.") }
+        val id = simularEvento()
+        viewModelScope.launch { _mensajes.emit(TextoUi(R.string.home_simulacion_iniciada, listOf(id))) }
     }
 
     private fun armarBoletin(galpones: List<GalponEntity>, ultimas: Map<Int, MedicionEntity>): Boletin? {
@@ -87,4 +89,13 @@ class HomeViewModel(app: Application) : AndroidViewModel(app) {
         set(Calendar.HOUR_OF_DAY, 0); set(Calendar.MINUTE, 0)
         set(Calendar.SECOND, 0); set(Calendar.MILLISECOND, 0)
     }.timeInMillis
+
+    companion object {
+        val Factory = viewModelFactory {
+            initializer {
+                val c = contenedor()
+                HomeViewModel(c.repositorio, c.notificarCritico, c.simularEventoCritico)
+            }
+        }
+    }
 }

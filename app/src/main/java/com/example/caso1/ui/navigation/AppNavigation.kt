@@ -30,8 +30,8 @@ fun AppNavigation(
     abrirAlertas: Boolean = false,
     onAlertasAbiertas: () -> Unit = {},
     navController: NavHostController = rememberNavController(),
-    sesion: SessionViewModel = viewModel(),
-    navegacion: NavegacionViewModel = viewModel()
+    sesion: SessionViewModel = viewModel(factory = SessionViewModel.Factory),
+    navegacion: NavegacionViewModel = viewModel(factory = NavegacionViewModel.Factory)
 ) {
     val estado by sesion.estado.collectAsStateWithLifecycle()
     val pendientes by navegacion.alertasPendientes.collectAsStateWithLifecycle()
@@ -88,7 +88,9 @@ fun AppNavigation(
             AppRoutes.REGISTRAR,
             arguments = listOf(navArgument("galponId") { type = NavType.IntType; defaultValue = -1 })
         ) { entrada ->
-            val vm: RegistroAccionViewModel = viewModel(navController.getBackStackEntry(AppRoutes.HOME))
+            val vm: RegistroAccionViewModel = viewModel(
+                navController.getBackStackEntry(AppRoutes.HOME), factory = RegistroAccionViewModel.Factory
+            )
             val preseleccion = entrada.arguments?.getInt("galponId") ?: -1
             LaunchedEffect(preseleccion) { if (preseleccion > 0) vm.preseleccionar(preseleccion) }
             RegistroAccionScreen(viewModel = vm, onBack = { navController.popBackStack() }) {
@@ -99,7 +101,9 @@ fun AppNavigation(
             }
         }
         composable(AppRoutes.CONFIRMAR) {
-            val vm: RegistroAccionViewModel = viewModel(navController.getBackStackEntry(AppRoutes.HOME))
+            val vm: RegistroAccionViewModel = viewModel(
+                navController.getBackStackEntry(AppRoutes.HOME), factory = RegistroAccionViewModel.Factory
+            )
             ConfirmacionScreen(viewModel = vm) {
                 navController.popBackStack(AppRoutes.HOME, inclusive = false)
             }

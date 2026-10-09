@@ -15,6 +15,7 @@ import androidx.core.view.WindowCompat
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.example.caso1.R
 import com.example.caso1.data.model.Rol
@@ -28,11 +29,12 @@ fun LoginScreen(onLogin: (Rol) -> Unit) {
     val vista = LocalView.current
     if (!vista.isInEditMode) {
         DisposableEffect(Unit) {
-            val ventana = (vista.context as Activity).window
-            val control = WindowCompat.getInsetsController(ventana, vista)
-            val antes = control.isAppearanceLightStatusBars
-            control.isAppearanceLightStatusBars = false
-            onDispose { control.isAppearanceLightStatusBars = antes }
+            // as? en vez de as: si el contexto no es una Activity (p. ej. una vista previa), no se rompe
+            val ventana = (vista.context as? Activity)?.window
+            val control = ventana?.let { WindowCompat.getInsetsController(it, vista) }
+            val antes = control?.isAppearanceLightStatusBars
+            control?.isAppearanceLightStatusBars = false
+            onDispose { if (antes != null) control.isAppearanceLightStatusBars = antes }
         }
     }
     Column(
@@ -46,9 +48,9 @@ fun LoginScreen(onLogin: (Rol) -> Unit) {
             ) {
                 Icono(R.drawable.ic_thermostat, null, Modifier.size(40.dp))
                 Spacer(Modifier.height(20.dp))
-                Text("Alerta Temperaturas", style = MaterialTheme.typography.displaySmall)
+                Text(stringResource(R.string.app_name), style = MaterialTheme.typography.displaySmall)
                 Spacer(Modifier.height(4.dp))
-                Text("Monitoreo de galpones y alerta temprana por calor", style = MaterialTheme.typography.bodyLarge)
+                Text(stringResource(R.string.login_subtitulo), style = MaterialTheme.typography.bodyLarge)
             }
         }
         Row(Modifier.fillMaxWidth().height(6.dp)) {
@@ -60,7 +62,7 @@ fun LoginScreen(onLogin: (Rol) -> Unit) {
         Column(
             Modifier.widthIn(max = 560.dp).align(Alignment.CenterHorizontally).padding(24.dp)
         ) {
-            Text("¿Con qué perfil ingresas?", style = MaterialTheme.typography.titleLarge)
+            Text(stringResource(R.string.login_pregunta), style = MaterialTheme.typography.titleLarge)
             Spacer(Modifier.height(16.dp))
             Rol.entries.forEach { rol ->
                 OutlinedCard(
@@ -79,7 +81,7 @@ fun LoginScreen(onLogin: (Rol) -> Unit) {
                         Spacer(Modifier.width(16.dp))
                         Column(Modifier.weight(1f)) {
                             Text(rol.etiqueta(), style = MaterialTheme.typography.titleMedium)
-                            Text(rol.descripcion(), style = MaterialTheme.typography.bodyMedium,
+                            Text(stringResource(rol.descripcionRes()), style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                         Icono(R.drawable.ic_chevron_right, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -88,7 +90,7 @@ fun LoginScreen(onLogin: (Rol) -> Unit) {
             }
             Spacer(Modifier.height(12.dp))
             Text(
-                "Datos simulados · Proyecto académico DSY1105, Duoc UC",
+                stringResource(R.string.login_pie),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.navigationBarsPadding()

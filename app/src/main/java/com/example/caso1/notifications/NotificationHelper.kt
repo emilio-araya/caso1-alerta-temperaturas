@@ -11,7 +11,7 @@ import androidx.core.app.NotificationManagerCompat
 import com.example.caso1.MainActivity
 import com.example.caso1.R
 import com.example.caso1.data.db.AlertaEntity
-import com.example.caso1.data.model.textoTipoAlerta
+import com.example.caso1.ui.screen.tipoAlertaRes
 import androidx.compose.ui.graphics.toArgb
 import com.example.caso1.ui.theme.AlertaRoja
 
@@ -25,9 +25,9 @@ object NotificationHelper {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val canal = NotificationChannel(
                 CHANNEL_ID,
-                "Alertas críticas",
+                context.getString(R.string.notif_canal_nombre),
                 NotificationManager.IMPORTANCE_HIGH
-            ).apply { description = "Eventos críticos de temperatura y humedad en los galpones" }
+            ).apply { description = context.getString(R.string.notif_canal_desc) }
             context.getSystemService(NotificationManager::class.java).createNotificationChannel(canal)
         }
     }
@@ -47,8 +47,8 @@ object NotificationHelper {
         val noti = NotificationCompat.Builder(context, CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_warning)
             .setColor(AlertaRoja.toArgb())
-            .setContentTitle("Alerta roja · Galpón ${alerta.galponId}")
-            .setContentText("${textoTipoAlerta(alerta.tipo)}. Toca para revisar y confirmar.")
+            .setContentTitle(context.getString(R.string.notif_titulo, alerta.galponId))
+            .setContentText(context.getString(R.string.notif_texto, context.getString(tipoAlertaRes(alerta.tipo))))
             .setCategory(NotificationCompat.CATEGORY_ALARM)
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setContentIntent(pending)

@@ -1,6 +1,7 @@
 package com.example.caso1.ui.screen
 
 import androidx.annotation.DrawableRes
+import androidx.annotation.StringRes
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -14,6 +15,7 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.drawText
@@ -75,7 +77,7 @@ fun EscalaTermica(temperatura: Double, modifier: Modifier = Modifier) {
         Umbrales.TEMP_NORMAL_MAX to Umbrales.TEMP_ADVERTENCIA_MAX to paleta.advertencia.franja,
         Umbrales.TEMP_ADVERTENCIA_MAX to ESCALA_MAX to paleta.critico.franja
     )
-    val descripcion = "Escala térmica: ${cifra(temperatura)} grados"
+    val descripcion = stringResource(R.string.escala_descripcion, cifra(temperatura))
 
     Canvas(modifier.fillMaxWidth().height(30.dp).semantics { contentDescription = descripcion }) {
         fun x(t: Double) = (size.width * ((t.coerceIn(ESCALA_MIN, ESCALA_MAX) - ESCALA_MIN) / (ESCALA_MAX - ESCALA_MIN))).toFloat()
@@ -118,10 +120,10 @@ fun EstadoVacio(@DrawableRes icono: Int, titulo: String, texto: String, modifier
 
 // ---------- Navegación principal (Material 3: barra inferior en teléfono, riel en pantallas grandes) ----------
 
-enum class Destino(val ruta: String, val etiqueta: String, @param:DrawableRes val icono: Int) {
-    GALPONES(AppRoutes.HOME, "Galpones", R.drawable.ic_thermostat),
-    ALERTAS(AppRoutes.ALERTAS, "Alertas", R.drawable.ic_notifications),
-    HISTORIAL(AppRoutes.HISTORIAL, "Historial", R.drawable.ic_history)
+enum class Destino(val ruta: String, @param:StringRes val etiqueta: Int, @param:DrawableRes val icono: Int) {
+    GALPONES(AppRoutes.HOME, R.string.nav_galpones, R.drawable.ic_thermostat),
+    ALERTAS(AppRoutes.ALERTAS, R.string.nav_alertas, R.drawable.ic_notifications),
+    HISTORIAL(AppRoutes.HISTORIAL, R.string.nav_historial, R.drawable.ic_history)
 }
 
 /** El historial es para supervisión y jefatura (punto 3.1 del caso). */
@@ -153,9 +155,9 @@ fun PantallaPrincipal(
     @Composable
     fun IconoDestino(d: Destino) {
         if (d == Destino.ALERTAS && marco.alertasPendientes > 0) {
-            BadgedBox(badge = { Badge { Text("${marco.alertasPendientes}") } }) { Icono(d.icono, d.etiqueta) }
+            BadgedBox(badge = { Badge { Text("${marco.alertasPendientes}") } }) { Icono(d.icono, stringResource(d.etiqueta)) }
         } else {
-            Icono(d.icono, d.etiqueta)
+            Icono(d.icono, stringResource(d.etiqueta))
         }
     }
 
@@ -184,7 +186,7 @@ fun PantallaPrincipal(
                                 selected = d == actual,
                                 onClick = { marco.onNavegar(d) },
                                 icon = { IconoDestino(d) },
-                                label = { Text(d.etiqueta) }
+                                label = { Text(stringResource(d.etiqueta)) }
                             )
                         }
                     }
@@ -205,7 +207,7 @@ fun PantallaPrincipal(
                         selected = d == actual,
                         onClick = { marco.onNavegar(d) },
                         icon = { IconoDestino(d) },
-                        label = { Text(d.etiqueta) }
+                        label = { Text(stringResource(d.etiqueta)) }
                     )
                 }
             }
@@ -223,7 +225,7 @@ fun BarraSecundaria(titulo: String, onBack: () -> Unit) {
     TopAppBar(
         title = { Text(titulo, style = MaterialTheme.typography.titleLarge) },
         navigationIcon = {
-            IconButton(onClick = onBack) { Icono(R.drawable.ic_arrow_back, "Volver") }
+            IconButton(onClick = onBack) { Icono(R.drawable.ic_arrow_back, stringResource(R.string.accion_volver)) }
         },
         colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.surface)
     )

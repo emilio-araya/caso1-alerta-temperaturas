@@ -7,16 +7,16 @@ import com.example.caso1.data.model.NivelAlerta
 import com.example.caso1.data.model.Rol
 import kotlinx.coroutines.flow.Flow
 
-class GalponRepository(private val db: AppDatabase) {
+class GalponRepository(private val db: AppDatabase) : RepositorioGalpones {
 
-    val galpones: Flow<List<GalponEntity>> = db.galponDao().observarTodos()
-    val alertasActivas: Flow<List<AlertaEntity>> = db.alertaDao().observarActivas()
-    val alertas: Flow<List<AlertaEntity>> = db.alertaDao().observarTodas()
-    val eventos: Flow<List<EventoEntity>> = db.eventoDao().observarTodos()
+    override val galpones: Flow<List<GalponEntity>> = db.galponDao().observarTodos()
+    override val alertasActivas: Flow<List<AlertaEntity>> = db.alertaDao().observarActivas()
+    override val alertas: Flow<List<AlertaEntity>> = db.alertaDao().observarTodas()
+    override val eventos: Flow<List<EventoEntity>> = db.eventoDao().observarTodos()
 
-    val ultimasMediciones: Flow<List<MedicionEntity>> = db.medicionDao().observarUltimas()
+    override val ultimasMediciones: Flow<List<MedicionEntity>> = db.medicionDao().observarUltimas()
 
-    fun mediciones(galponId: Int): Flow<List<MedicionEntity>> =
+    override fun mediciones(galponId: Int): Flow<List<MedicionEntity>> =
         db.medicionDao().observarPorGalpon(galponId)
 
     /**
@@ -24,7 +24,7 @@ class GalponRepository(private val db: AppDatabase) {
      * en este refresco (las que ya estaban activas no se repiten), para notificar
      * solo lo nuevo.
      */
-    suspend fun refrescar(): List<AlertaEntity> = db.withTransaction {
+    override suspend fun refrescar(): List<AlertaEntity> = db.withTransaction {
         val galpones = MockMonitorApi.getGalpones()
         db.galponDao().insertarTodos(galpones.map { GalponEntity(it.id, it.granja, it.nombre, it.estado) })
 
@@ -62,24 +62,24 @@ class GalponRepository(private val db: AppDatabase) {
      * Confirma (acusa recibo de) una alerta y deja constancia en el historial de acciones.
      * [detalle] es el texto legible de la alerta, armado por la UI.
      */
-    suspend fun confirmarAlerta(alerta: AlertaEntity, rol: Rol, detalle: String) = db.withTransaction {
+    override suspend fun confirmarAlerta(alertaId: Int, galponId: Int, rol: Rol, detalle: String) = db.withTransaction {
         val ahora = System.currentTimeMillis()
-        db.alertaDao().confirmar(alerta.id, rol.name, ahora)
+        db.alertaDao().confirmar(alertaId, rol.name, ahora)
         db.eventoDao().insertar(
             EventoEntity(
-                galponId = alerta.galponId,
-                descripcion = "[$ACCION_CONFIRMAR] $detalle",
+                galponId = galponId,
+                descripcion = detalle,
                 accionRegistrada = ACCION_CONFIRMAR,
                 fechaHora = ahora
             )
         )
     }
 
-    suspend fun registrarAccion(galponId: Int, tipoAccion: String, descripcion: String) {
+    override suspend fun registrarAccion(galponId: Int, tipoAccion: String, descripcion: String) {
         db.eventoDao().insertar(
             EventoEntity(
                 galponId = galponId,
-                descripcion = "[$tipoAccion] $descripcion",
+                descripcion = descripcion,
                 accionRegistrada = tipoAccion,
                 fechaHora = System.currentTimeMillis()
             )
@@ -87,7 +87,8 @@ class GalponRepository(private val db: AppDatabase) {
     }
 }
 
-const val ACCION_CONFIRMAR = "Confirmación de alerta"
+/** Código guardado en eventos.accionRegistrada; el texto visible está en strings.xml. */
+const val ACCION_CONFIRMAR = "CONFIRMACION_ALERTA"
 
 /** Las mediciones se guardan 24 h (96 lecturas por galpón, una cada 15 min). */
 const val RETENCION_MEDICIONES_MS = 24 * 60 * 60_000L

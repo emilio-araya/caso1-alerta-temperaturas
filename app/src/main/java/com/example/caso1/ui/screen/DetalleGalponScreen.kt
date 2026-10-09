@@ -16,6 +16,7 @@ import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.style.TextAlign
@@ -25,7 +26,6 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.caso1.R
 import com.example.caso1.data.db.MedicionEntity
 import com.example.caso1.data.model.Umbrales
-import com.example.caso1.data.model.textoTipoAlerta
 import com.example.caso1.ui.theme.EstiloCifra
 import com.example.caso1.ui.theme.EstiloEstado
 import com.example.caso1.ui.theme.LocalPaletaEstados
@@ -33,10 +33,10 @@ import com.example.caso1.viewmodel.DetalleUiState
 import com.example.caso1.viewmodel.DetalleViewModel
 
 @Composable
-fun DetalleGalponScreen(onBack: () -> Unit, onRegistrar: ((Int) -> Unit)?, viewModel: DetalleViewModel = viewModel()) {
+fun DetalleGalponScreen(onBack: () -> Unit, onRegistrar: ((Int) -> Unit)?, viewModel: DetalleViewModel = viewModel(factory = DetalleViewModel.Factory)) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
 
-    Scaffold(topBar = { BarraSecundaria(state.nombre, onBack) }) { padding ->
+    Scaffold(topBar = { BarraSecundaria(nombreGalpon(state.galpon, state.galponId), onBack) }) { padding ->
         DetalleContenido(
             state,
             Modifier.padding(padding),
@@ -62,9 +62,9 @@ fun DetalleContenido(state: DetalleUiState, modifier: Modifier = Modifier, onReg
 
         item {
             Column(Modifier.padding(16.dp)) {
-                Text("Temperatura", style = MaterialTheme.typography.titleMedium)
+                Text(stringResource(R.string.detalle_temperatura), style = MaterialTheme.typography.titleMedium)
                 Text(
-                    "Últimas ${horasCubiertas(mediciones)} · una lectura cada 15 min",
+                    rangoCubierto(mediciones),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -80,7 +80,7 @@ fun DetalleContenido(state: DetalleUiState, modifier: Modifier = Modifier, onReg
                     FilledTonalButton(onClick = onRegistrar, modifier = Modifier.fillMaxWidth()) {
                         Icono(R.drawable.ic_edit_note, null, Modifier.size(18.dp))
                         Spacer(Modifier.width(8.dp))
-                        Text("Registrar acción en este galpón")
+                        Text(stringResource(R.string.detalle_registrar))
                     }
                 }
             }
@@ -88,15 +88,23 @@ fun DetalleContenido(state: DetalleUiState, modifier: Modifier = Modifier, onReg
 
         item {
             Column(Modifier.padding(start = 16.dp, end = 16.dp, top = 8.dp)) {
-                Text("Mediciones", style = MaterialTheme.typography.titleMedium)
+                Text(stringResource(R.string.detalle_mediciones), style = MaterialTheme.typography.titleMedium)
                 Spacer(Modifier.height(8.dp))
-                FilaTabla("Hora", "Temp.", "Humedad", encabezado = true)
+                FilaTabla(
+                    stringResource(R.string.detalle_col_hora), stringResource(R.string.detalle_col_temp),
+                    stringResource(R.string.detalle_col_humedad), encabezado = true
+                )
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
             }
         }
         items(mediciones, key = { it.id }) { m ->
             Column(Modifier.padding(horizontal = 16.dp)) {
-                FilaTabla(formatoHora(m.fechaHora), "${cifra(m.temperatura)} °C", "${cifra(m.humedad, 0)} %", medicion = m)
+                FilaTabla(
+                    formatoHora(m.fechaHora),
+                    stringResource(R.string.valor_temperatura, cifra(m.temperatura)),
+                    stringResource(R.string.valor_humedad, cifra(m.humedad, 0)),
+                    medicion = m
+                )
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
             }
         }
@@ -112,7 +120,7 @@ private fun PlacaEstado(ultima: MedicionEntity, state: DetalleUiState) {
     Surface(color = c.franja, contentColor = c.sobreFranja) {
         Column(Modifier.fillMaxWidth().padding(16.dp)) {
             Text(
-                estado.etiqueta().uppercase() + (causa?.let { " · ${textoTipoAlerta(it).uppercase()}" } ?: ""),
+                estado.etiqueta().uppercase() + (causa?.let { " · " + tipoAlertaLegible(it).uppercase() } ?: ""),
                 style = EstiloEstado
             )
             Row(verticalAlignment = Alignment.Bottom) {
@@ -122,9 +130,9 @@ private fun PlacaEstado(ultima: MedicionEntity, state: DetalleUiState) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icono(R.drawable.ic_water_drop, null, Modifier.size(18.dp))
                 Spacer(Modifier.width(4.dp))
-                Text("Humedad ${cifra(ultima.humedad, 0)} %", style = MaterialTheme.typography.titleMedium)
+                Text(stringResource(R.string.humedad_etiqueta, cifra(ultima.humedad, 0)), style = MaterialTheme.typography.titleMedium)
                 Spacer(Modifier.weight(1f))
-                Text("Lectura de las ${formatoHora(ultima.fechaHora)}", style = MaterialTheme.typography.labelMedium)
+                Text(stringResource(R.string.detalle_lectura_de, formatoHora(ultima.fechaHora)), style = MaterialTheme.typography.labelMedium)
             }
         }
     }
@@ -147,7 +155,7 @@ private fun FilaTabla(hora: String, temp: String, humedad: String, encabezado: B
         // Estado de la lectura completa (temperatura y humedad juntas), igual que el galpón
         Row(Modifier.weight(1f), horizontalArrangement = Arrangement.End, verticalAlignment = Alignment.CenterVertically) {
             if (medicion == null) {
-                Text("Estado", style = estilo, color = tenue)
+                Text(stringResource(R.string.detalle_col_estado), style = estilo, color = tenue)
             } else {
                 val e = Umbrales.evaluar(medicion.temperatura, medicion.humedad)
                 MarcaEstado(e)
@@ -158,10 +166,13 @@ private fun FilaTabla(hora: String, temp: String, humedad: String, encabezado: B
     }
 }
 
-private fun horasCubiertas(mediciones: List<MedicionEntity>): String {
-    if (mediciones.size < 2) return "lecturas"
-    val horas = (mediciones.first().fechaHora - mediciones.last().fechaHora) / 3_600_000.0
-    return if (horas < 1.5) "${mediciones.size} lecturas" else "${Math.round(horas)} h"
+/** "Últimas 6 h · …" o, con pocas lecturas, "Últimas 4 lecturas · …". */
+@Composable
+private fun rangoCubierto(mediciones: List<MedicionEntity>): String {
+    val horas = if (mediciones.size < 2) 0.0
+        else (mediciones.first().fechaHora - mediciones.last().fechaHora) / 3_600_000.0
+    return if (horas < 1.5) stringResource(R.string.detalle_rango_lecturas, mediciones.size)
+        else stringResource(R.string.detalle_rango_horas, Math.round(horas).toInt())
 }
 
 /** Gráfico de línea con las zonas de los umbrales sombreadas y la última lectura marcada. */
@@ -179,7 +190,7 @@ private fun GraficoTemperatura(cronologicas: List<MedicionEntity>, modifier: Mod
     val max = maxOf(temps.max(), Umbrales.TEMP_ADVERTENCIA_MAX) + 1.5
     val ultima = temps.last()
     val colorUltima = estadoTemperatura(ultima).let { paleta.de(it).franja }
-    val descripcion = "Gráfico de temperatura: de ${cifra(temps.first())} a ${cifra(ultima)} grados"
+    val descripcion = stringResource(R.string.detalle_grafico_descripcion, cifra(temps.first()), cifra(ultima))
 
     Canvas(modifier.fillMaxWidth().height(190.dp).semantics { contentDescription = descripcion }) {
         val margenDerecho = 30.dp.toPx()

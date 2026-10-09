@@ -1,5 +1,6 @@
 package com.example.caso1.ui.screen
 
+import androidx.annotation.StringRes
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -10,6 +11,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -17,12 +19,12 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.caso1.R
 import com.example.caso1.viewmodel.MIN_DESCRIPCION
 import com.example.caso1.viewmodel.RegistroAccionViewModel
-import com.example.caso1.viewmodel.TIPOS_ACCION
+import com.example.caso1.viewmodel.TipoAccion
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun RegistroAccionScreen(
-    viewModel: RegistroAccionViewModel = viewModel(),
+    viewModel: RegistroAccionViewModel = viewModel(factory = RegistroAccionViewModel.Factory),
     onBack: () -> Unit,
     onRegistrado: () -> Unit
 ) {
@@ -37,7 +39,7 @@ fun RegistroAccionScreen(
         }
     }
 
-    Scaffold(topBar = { BarraSecundaria("Registrar acción", onBack) }) { padding ->
+    Scaffold(topBar = { BarraSecundaria(stringResource(R.string.registro_titulo), onBack) }) { padding ->
         // Desplazable y respetando el teclado: en pantallas pequeñas el botón quedaba tapado
         Column(
             Modifier.padding(padding)
@@ -46,7 +48,7 @@ fun RegistroAccionScreen(
                 .widthIn(max = 640.dp)
                 .padding(16.dp)
         ) {
-            Seccion("Galpón", errores.galpon)
+            Seccion(stringResource(R.string.registro_galpon), errores.galpon)
             Card(
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLowest),
                 border = BorderStroke(
@@ -84,14 +86,14 @@ fun RegistroAccionScreen(
             }
 
             Spacer(Modifier.height(24.dp))
-            Seccion("Tipo de acción", errores.tipo)
+            Seccion(stringResource(R.string.registro_tipo), errores.tipo)
             FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                TIPOS_ACCION.forEach { tipo ->
+                TipoAccion.entries.forEach { tipo ->
                     val elegido = state.tipoAccion == tipo
                     FilterChip(
                         selected = elegido,
                         onClick = { viewModel.onTipoChange(tipo) },
-                        label = { Text(tipo) },
+                        label = { Text(stringResource(tipo.etiqueta)) },
                         leadingIcon = if (elegido) {
                             { Icono(R.drawable.ic_check_circle, null, Modifier.size(18.dp)) }
                         } else null
@@ -100,14 +102,17 @@ fun RegistroAccionScreen(
             }
 
             Spacer(Modifier.height(24.dp))
-            Seccion("Qué hiciste", null)
+            Seccion(stringResource(R.string.registro_que_hiciste), null)
             OutlinedTextField(
                 value = state.descripcion,
                 onValueChange = viewModel::onDescripcionChange,
-                placeholder = { Text("Ej.: Encendí los ventiladores del sector norte") },
+                placeholder = { Text(stringResource(R.string.registro_placeholder)) },
                 isError = errores.descripcion != null,
                 supportingText = {
-                    Text(errores.descripcion ?: "${state.descripcion.trim().length} caracteres · mínimo $MIN_DESCRIPCION")
+                    Text(
+                        errores.descripcion?.let { stringResource(it, MIN_DESCRIPCION) }
+                            ?: stringResource(R.string.registro_contador, state.descripcion.trim().length, MIN_DESCRIPCION)
+                    )
                 },
                 modifier = Modifier.fillMaxWidth(),
                 minLines = 3
@@ -122,7 +127,7 @@ fun RegistroAccionScreen(
                 if (state.guardando) {
                     CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp, color = LocalContentColor.current)
                 } else {
-                    Text("Registrar acción")
+                    Text(stringResource(R.string.registro_boton))
                 }
             }
         }
@@ -130,13 +135,13 @@ fun RegistroAccionScreen(
 }
 
 @Composable
-private fun Seccion(titulo: String, error: String?) {
+private fun Seccion(titulo: String, @StringRes error: Int?) {
     Text(titulo, style = MaterialTheme.typography.titleMedium)
     if (error != null) {
         Row(Modifier.padding(top = 2.dp), verticalAlignment = Alignment.CenterVertically) {
             Icono(R.drawable.ic_warning, null, Modifier.size(16.dp), MaterialTheme.colorScheme.error)
             Spacer(Modifier.width(4.dp))
-            Text(error, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
+            Text(stringResource(error), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
         }
     }
     Spacer(Modifier.height(8.dp))

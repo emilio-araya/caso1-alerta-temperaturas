@@ -39,9 +39,6 @@ data class Alerta(
     val fechaHora: Long
 )
 
-/** "TEMPERATURA_ALTA" → "Temperatura alta" */
-fun textoTipoAlerta(tipo: String): String =
-    tipo.lowercase().replace('_', ' ').replaceFirstChar { it.uppercase() }
 
 object Umbrales {
     const val TEMP_NORMAL_MIN = 18.0

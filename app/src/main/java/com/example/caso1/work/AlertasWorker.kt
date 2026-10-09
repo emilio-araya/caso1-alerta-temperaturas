@@ -3,9 +3,7 @@ package com.example.caso1.work
 import android.content.Context
 import androidx.work.*
 import com.example.caso1.data.api.MockMonitorApi
-import com.example.caso1.data.db.DatabaseProvider
-import com.example.caso1.data.repository.GalponRepository
-import com.example.caso1.notifications.NotificationHelper
+import com.example.caso1.AlertaTemperaturasApp
 import java.util.concurrent.TimeUnit
 import kotlin.coroutines.cancellation.CancellationException
 
@@ -16,8 +14,8 @@ import kotlin.coroutines.cancellation.CancellationException
 class AlertasWorker(context: Context, params: WorkerParameters) : CoroutineWorker(context, params) {
 
     override suspend fun doWork(): Result = try {
-        val repo = GalponRepository(DatabaseProvider.get(applicationContext))
-        repo.refrescar().forEach { NotificationHelper.notificarCritico(applicationContext, it) }
+        val contenedor = (applicationContext as AlertaTemperaturasApp).contenedor
+        contenedor.repositorio.refrescar().forEach(contenedor.notificarCritico)
         Result.success()
     } catch (e: CancellationException) {
         throw e   // WorkManager detuvo el trabajo: no es un error que deba reintentarse

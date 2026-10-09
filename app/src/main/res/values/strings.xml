@@ -1,3 +1,162 @@
 <resources>
     <string name="app_name">Alerta Temperaturas</string>
+
+    <!-- Estados (escala oficial de alertas) -->
+    <string name="estado_normal">Normal</string>
+    <string name="estado_amarilla">Alerta amarilla</string>
+    <string name="estado_roja">Alerta roja</string>
+    <string name="estado_corto_normal">Normal</string>
+    <string name="estado_corto_amarilla">Amarilla</string>
+    <string name="estado_corto_roja">Roja</string>
+
+    <!-- Tipos de alerta (causa) -->
+    <string name="alerta_tipo_temperatura_alta">Temperatura alta</string>
+    <string name="alerta_tipo_temperatura_baja">Temperatura baja</string>
+    <string name="alerta_tipo_humedad_alta">Humedad alta</string>
+    <string name="alerta_tipo_humedad_baja">Humedad baja</string>
+
+    <!-- Perfiles -->
+    <string name="rol_operario">Operario</string>
+    <string name="rol_supervisor">Supervisor</string>
+    <string name="rol_jefatura">Jefatura</string>
+    <string name="rol_operario_desc">Revisa los galpones, confirma alertas y registra acciones</string>
+    <string name="rol_supervisor_desc">Sigue varios galpones, sus alertas y el historial</string>
+    <string name="rol_jefatura_desc">Resumen del estado de los galpones y alertas del día</string>
+
+    <!-- Formatos compartidos -->
+    <string name="galpon_nombre_completo">%1$s · %2$s</string>
+    <string name="galpon_generico">Galpón %1$d</string>
+    <string name="valor_temperatura">%1$s °C</string>
+    <string name="valor_temperatura_corta">%1$s°</string>
+    <string name="valor_humedad">%1$s %%</string>
+    <string name="humedad_etiqueta">Humedad %1$s %%</string>
+    <string name="confirmada_por">Confirmada por %1$s · %2$s</string>
+    <string name="pendiente_confirmar">Pendiente de confirmar</string>
+    <string name="meta_galpon_fecha">%1$s · %2$s</string>
+
+    <!-- Navegación -->
+    <string name="nav_galpones">Galpones</string>
+    <string name="nav_alertas">Alertas</string>
+    <string name="nav_historial">Historial</string>
+    <string name="accion_volver">Volver</string>
+    <string name="accion_mas_opciones">Más opciones</string>
+    <string name="escala_descripcion">Escala térmica: %1$s grados</string>
+
+    <!-- Login -->
+    <string name="login_subtitulo">Monitoreo de galpones y alerta temprana por calor</string>
+    <string name="login_pregunta">¿Con qué perfil ingresas?</string>
+    <string name="login_pie">Datos simulados · Proyecto académico DSY1105, Duoc UC</string>
+
+    <!-- Galpones (inicio) -->
+    <string name="home_menu_simular">Simular pico de calor (demo)</string>
+    <string name="home_menu_cerrar_sesion">Cerrar sesión</string>
+    <string name="home_registrar_accion">Registrar acción</string>
+    <plurals name="home_galpones">
+        <item quantity="one">%d galpón</item>
+        <item quantity="other">%d galpones</item>
+    </plurals>
+    <plurals name="home_galpones_ordenados">
+        <item quantity="one">%d galpón · más grave primero</item>
+        <item quantity="other">%d galpones · más graves primero</item>
+    </plurals>
+    <plurals name="home_todos_normales">
+        <item quantity="one">El galpón está en rango normal</item>
+        <item quantity="other">Los %d galpones están en rango normal</item>
+    </plurals>
+    <plurals name="home_otros_fuera_rango">
+        <item quantity="one">y %d galpón más fuera de rango</item>
+        <item quantity="other">y %d galpones más fuera de rango</item>
+    </plurals>
+    <string name="home_galpon_a_temperatura">%1$s a %2$s °C</string>
+    <string name="home_que_hacer_critico">Revisa el galpón ahora y confirma la alerta.</string>
+    <string name="home_que_hacer_advertencia">Mantén el galpón en observación.</string>
+    <string name="home_actualizado">Actualizado a las %1$s</string>
+    <string name="home_ver_alertas">Ver alertas</string>
+    <string name="home_resumen">Resumen</string>
+    <plurals name="home_alertas_activas_en">
+        <item quantity="one">%1$d alerta activa en %2$d galpones</item>
+        <item quantity="other">%1$d alertas activas en %2$d galpones</item>
+    </plurals>
+    <plurals name="home_alertas_hoy">
+        <item quantity="one">%d alerta registrada hoy</item>
+        <item quantity="other">%d alertas registradas hoy</item>
+    </plurals>
+    <string name="home_simulacion_iniciada">Pico de calor simulado en el Galpón %1$d. La alerta llega en 10 s, aunque cierres la app.</string>
+
+    <!-- Detalle del galpón -->
+    <string name="detalle_temperatura">Temperatura</string>
+    <string name="detalle_rango_horas">Últimas %1$d h · una lectura cada 15 min</string>
+    <string name="detalle_rango_lecturas">Últimas %1$d lecturas · una lectura cada 15 min</string>
+    <string name="detalle_registrar">Registrar acción en este galpón</string>
+    <string name="detalle_mediciones">Mediciones</string>
+    <string name="detalle_col_hora">Hora</string>
+    <string name="detalle_col_temp">Temp.</string>
+    <string name="detalle_col_humedad">Humedad</string>
+    <string name="detalle_col_estado">Estado</string>
+    <string name="detalle_lectura_de">Lectura de las %1$s</string>
+    <string name="detalle_grafico_descripcion">Gráfico de temperatura: de %1$s a %2$s grados</string>
+
+    <!-- Alertas -->
+    <string name="alertas_titulo">Alertas activas</string>
+    <string name="alertas_vacio_titulo">Sin alertas activas</string>
+    <string name="alertas_vacio_texto">Todos los galpones están en rango. Si alguno se sale, te llegará una notificación.</string>
+    <string name="alertas_todas_confirmadas">Todas confirmadas</string>
+    <plurals name="alertas_por_confirmar">
+        <item quantity="one">%d por confirmar</item>
+        <item quantity="other">%d por confirmar</item>
+    </plurals>
+    <string name="alertas_solo_consulta">Con el perfil Jefatura las alertas se consultan; las confirman operarios y supervisores.</string>
+    <string name="alertas_dialogo_titulo">¿Confirmar alerta?</string>
+    <string name="alertas_dialogo_texto">%1$s en %2$s.\n\nQuedará en el historial que la recibiste. La alerta sigue activa hasta que el galpón vuelva a rango normal.</string>
+    <string name="alertas_confirmar">Confirmar</string>
+    <string name="alertas_cancelar">Cancelar</string>
+    <string name="alertas_confirmada_snackbar">Alerta de %1$s confirmada</string>
+    <string name="alertas_desde">Desde las %1$s</string>
+    <string name="alertas_sin_confirmar">Sin confirmar</string>
+    <string name="alertas_detalle_historial">%1$s en %2$s (%3$s)</string>
+
+    <!-- Historial -->
+    <string name="historial_titulo">Historial</string>
+    <string name="historial_tab_alertas">Alertas (%1$d)</string>
+    <string name="historial_tab_acciones">Acciones (%1$d)</string>
+    <string name="historial_todos">Todos</string>
+    <string name="historial_sin_alertas_titulo">Sin alertas registradas</string>
+    <string name="historial_sin_alertas_texto">Aquí quedan todas las alertas, activas y resueltas.</string>
+    <string name="historial_sin_acciones_titulo">Aún no hay acciones</string>
+    <string name="historial_sin_acciones_texto">Las acciones que registren los operarios y las alertas confirmadas aparecerán aquí.</string>
+    <string name="historial_resuelta">Resuelta</string>
+    <string name="accion_confirmacion">Confirmación de alerta</string>
+    <string name="accion_evento">Evento</string>
+
+    <!-- Registrar acción -->
+    <string name="registro_titulo">Registrar acción</string>
+    <string name="registro_galpon">Galpón</string>
+    <string name="registro_tipo">Tipo de acción</string>
+    <string name="registro_que_hiciste">Qué hiciste</string>
+    <string name="registro_placeholder">Ej.: Encendí los ventiladores del sector norte</string>
+    <string name="registro_contador">%1$d caracteres · mínimo %2$d</string>
+    <string name="registro_boton">Registrar acción</string>
+    <string name="registro_error_galpon">Elige el galpón donde hiciste la acción</string>
+    <string name="registro_error_tipo">Elige el tipo de acción</string>
+    <string name="registro_error_descripcion">Describe qué hiciste (mínimo %1$d caracteres)</string>
+    <string name="accion_tipo_ventilacion">Ventilación</string>
+    <string name="accion_tipo_revision">Revisión de equipos</string>
+    <string name="accion_tipo_notificacion">Notificación a supervisor</string>
+    <string name="accion_tipo_otro">Otro</string>
+
+    <!-- Confirmación -->
+    <string name="confirmacion_barra">Confirmación</string>
+    <string name="confirmacion_titulo">Acción registrada</string>
+    <string name="confirmacion_texto">Quedó guardada en el historial del galpón.</string>
+    <string name="confirmacion_galpon">Galpón</string>
+    <string name="confirmacion_tipo">Tipo</string>
+    <string name="confirmacion_que">Qué se hizo</string>
+    <string name="confirmacion_hora">Hora</string>
+    <string name="confirmacion_volver">Volver a galpones</string>
+
+    <!-- Notificaciones -->
+    <string name="notif_canal_nombre">Alertas críticas</string>
+    <string name="notif_canal_desc">Eventos críticos de temperatura y humedad en los galpones</string>
+    <string name="notif_titulo">Alerta roja · Galpón %1$d</string>
+    <string name="notif_texto">%1$s. Toca para revisar y confirmar.</string>
 </resources>

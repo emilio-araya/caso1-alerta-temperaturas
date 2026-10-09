@@ -1,8 +1,10 @@
 package com.example.caso1.viewmodel
 
-import android.app.Application
-import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.lifecycle.viewmodel.initializer
+import androidx.lifecycle.viewmodel.viewModelFactory
+import com.example.caso1.contenedor
 import com.example.caso1.data.SessionManager
 import com.example.caso1.data.model.Rol
 import kotlinx.coroutines.flow.SharingStarted
@@ -18,8 +20,7 @@ sealed interface EstadoSesion {
     data class Activa(val rol: Rol) : EstadoSesion
 }
 
-class SessionViewModel(app: Application) : AndroidViewModel(app) {
-    private val session = SessionManager(app)
+class SessionViewModel(private val session: SessionManager) : ViewModel() {
 
     val estado: StateFlow<EstadoSesion> = session.rol
         .map { rol -> if (rol == null) EstadoSesion.SinSesion else EstadoSesion.Activa(rol) }
@@ -27,4 +28,10 @@ class SessionViewModel(app: Application) : AndroidViewModel(app) {
 
     fun iniciarSesion(rol: Rol) = viewModelScope.launch { session.guardarRol(rol) }
     fun cerrarSesion() = viewModelScope.launch { session.cerrarSesion() }
+
+    companion object {
+        val Factory = viewModelFactory {
+            initializer { SessionViewModel(contenedor().sesion) }
+        }
+    }
 }

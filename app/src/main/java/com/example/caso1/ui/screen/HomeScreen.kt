@@ -1,5 +1,6 @@
 package com.example.caso1.ui.screen
 
+import androidx.annotation.StringRes
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
@@ -14,6 +15,9 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalResources
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -44,15 +48,16 @@ fun HomeScreen(
     onVerDetalle: (Int) -> Unit,
     onVerAlertas: () -> Unit,
     onRegistrar: (Int?) -> Unit,
-    viewModel: HomeViewModel = viewModel()
+    viewModel: HomeViewModel = viewModel(factory = HomeViewModel.Factory)
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val rol = marco.rol
     var menuAbierto by remember { mutableStateOf(false) }
     val snackbar = remember { SnackbarHostState() }
+    val recursos = LocalResources.current
 
     LaunchedEffect(Unit) {
-        viewModel.mensajes.collect { snackbar.showSnackbar(it) }
+        viewModel.mensajes.collect { snackbar.showSnackbar(it.resolver(recursos)) }
     }
 
     // Supervisor y jefatura ven primero lo más grave; el operario, en orden de galpón (no se mueven)
@@ -62,19 +67,19 @@ fun HomeScreen(
     PantallaPrincipal(
         marco = marco,
         actual = Destino.GALPONES,
-        titulo = "Alerta Temperaturas",
+        titulo = stringResource(R.string.app_name),
         snackbarHost = { SnackbarHost(snackbar) },
         acciones = {
             Box {
-                IconButton(onClick = { menuAbierto = true }) { Icono(R.drawable.ic_more_vert, "Más opciones") }
+                IconButton(onClick = { menuAbierto = true }) { Icono(R.drawable.ic_more_vert, stringResource(R.string.accion_mas_opciones)) }
                 DropdownMenu(expanded = menuAbierto, onDismissRequest = { menuAbierto = false }) {
                     DropdownMenuItem(
-                        text = { Text("Simular pico de calor (demo)") },
+                        text = { Text(stringResource(R.string.home_menu_simular)) },
                         leadingIcon = { Icono(R.drawable.ic_bolt, null) },
                         onClick = { menuAbierto = false; viewModel.simularEventoCritico() }
                     )
                     DropdownMenuItem(
-                        text = { Text("Cerrar sesión") },
+                        text = { Text(stringResource(R.string.home_menu_cerrar_sesion)) },
                         leadingIcon = { Icono(R.drawable.ic_logout, null) },
                         onClick = { menuAbierto = false; onCerrarSesion() }
                     )
@@ -86,7 +91,7 @@ fun HomeScreen(
                 ExtendedFloatingActionButton(
                     onClick = { onRegistrar(null) },
                     icon = { Icono(R.drawable.ic_edit_note, null) },
-                    text = { Text("Registrar acción") },
+                    text = { Text(stringResource(R.string.home_registrar_accion)) },
                     containerColor = MaterialTheme.colorScheme.primary,
                     contentColor = MaterialTheme.colorScheme.onPrimary
                 )
@@ -126,7 +131,10 @@ fun HomeScreen(
                 } else {
                     item(span = { GridItemSpan(maxLineSpan) }, key = "titulo") {
                         Text(
-                            if (rol == Rol.OPERARIO) "${listado.size} galpones" else "${listado.size} galpones · más graves primero",
+                            pluralStringResource(
+                                if (rol == Rol.OPERARIO) R.plurals.home_galpones else R.plurals.home_galpones_ordenados,
+                                listado.size, listado.size
+                            ),
                             style = MaterialTheme.typography.titleSmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.padding(top = 12.dp)
@@ -143,7 +151,7 @@ fun HomeScreen(
 
         when (marco.ancho) {
             WindowWidthSizeClass.Expanded -> {
-                val detalleVm: DetalleViewModel = viewModel(key = "panel_detalle")
+                val detalleVm: DetalleViewModel = viewModel(key = "panel_detalle", factory = DetalleViewModel.Factory)
                 val detalle by detalleVm.uiState.collectAsStateWithLifecycle()
                 var seleccionado by rememberSaveable { mutableStateOf<Int?>(null) }
                 val actual = seleccionado ?: listado.firstOrNull()?.id
@@ -154,7 +162,7 @@ fun HomeScreen(
                     VerticalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                     Column(Modifier.weight(0.58f)) {
                         Text(
-                            detalle.nombre,
+                            nombreGalpon(detalle.galpon, detalle.galponId),
                             style = MaterialTheme.typography.titleLarge,
                             modifier = Modifier.padding(start = 16.dp, top = 12.dp, bottom = 8.dp)
                         )
@@ -193,26 +201,28 @@ private fun BoletinEstado(b: Boletin, onVerAlertas: () -> Unit, modifier: Modifi
             val g = b.masGrave
             val m = b.medicionMasGrave
             if (normal || g == null) {
-                Text("Los ${b.total} galpones están en rango normal", style = MaterialTheme.typography.titleMedium)
+                Text(pluralStringResource(R.plurals.home_todos_normales, b.total, b.total), style = MaterialTheme.typography.titleMedium)
             } else {
                 Text(
-                    "${g.granja} · ${g.nombre}" + (m?.let { " a ${cifra(it.temperatura)} °C" } ?: ""),
+                    nombreGalpon(g, g.id).let { n ->
+                        m?.let { stringResource(R.string.home_galpon_a_temperatura, n, cifra(it.temperatura)) } ?: n
+                    },
                     style = MaterialTheme.typography.titleMedium
                 )
                 val otros = b.afectados - 1
                 if (otros > 0) {
                     Text(
-                        if (otros == 1) "y 1 galpón más fuera de rango" else "y $otros galpones más fuera de rango",
+                        pluralStringResource(R.plurals.home_otros_fuera_rango, otros, otros),
                         style = MaterialTheme.typography.bodyMedium
                     )
                 }
                 Spacer(Modifier.height(8.dp))
-                Text(queHacer(b.estado), style = MaterialTheme.typography.bodyMedium)
+                queHacer(b.estado)?.let { Text(stringResource(it), style = MaterialTheme.typography.bodyMedium) }
             }
             Spacer(Modifier.height(12.dp))
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
-                    b.actualizado?.let { "Actualizado a las ${formatoHora(it)}" } ?: "",
+                    b.actualizado?.let { stringResource(R.string.home_actualizado, formatoHora(it)) } ?: "",
                     style = MaterialTheme.typography.labelMedium,
                     modifier = Modifier.weight(1f)
                 )
@@ -222,7 +232,7 @@ private fun BoletinEstado(b: Boletin, onVerAlertas: () -> Unit, modifier: Modifi
                         shape = MaterialTheme.shapes.extraSmall,
                         border = BorderStroke(1.5.dp, tinta),
                         colors = ButtonDefaults.outlinedButtonColors(contentColor = tinta)
-                    ) { Text("Ver alertas") }
+                    ) { Text(stringResource(R.string.home_ver_alertas)) }
                 }
             }
         }
@@ -230,10 +240,11 @@ private fun BoletinEstado(b: Boletin, onVerAlertas: () -> Unit, modifier: Modifi
 }
 
 /** La instrucción breve del aviso: qué se espera del operario ahora. */
-private fun queHacer(estado: EstadoGalpon): String = when (estado) {
-    EstadoGalpon.CRITICO -> "Revisa el galpón ahora y confirma la alerta."
-    EstadoGalpon.ADVERTENCIA -> "Mantén el galpón en observación."
-    EstadoGalpon.NORMAL -> ""
+@StringRes
+private fun queHacer(estado: EstadoGalpon): Int? = when (estado) {
+    EstadoGalpon.CRITICO -> R.string.home_que_hacer_critico
+    EstadoGalpon.ADVERTENCIA -> R.string.home_que_hacer_advertencia
+    EstadoGalpon.NORMAL -> null
 }
 
 /** Ensancha el elemento [margen] por cada lado, para salir del relleno de la grilla. */
@@ -263,14 +274,14 @@ private fun TarjetaGalpon(galpon: GalponEntity, ultima: MedicionEntity?, selecci
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icono(R.drawable.ic_water_drop, null, Modifier.size(16.dp), MaterialTheme.colorScheme.onSurfaceVariant)
                         Spacer(Modifier.width(4.dp))
-                        Text("Humedad ${cifra(it.humedad, 0)} %", style = EstiloCifra,
+                        Text(stringResource(R.string.humedad_etiqueta, cifra(it.humedad, 0)), style = EstiloCifra,
                             color = colorCifra(estadoHumedad(it.humedad), MaterialTheme.colorScheme.onSurfaceVariant))
                     }
                 }
             }
             ultima?.let {
                 Text(
-                    "${cifra(it.temperatura)}°",
+                    stringResource(R.string.valor_temperatura_corta, cifra(it.temperatura)),
                     style = MaterialTheme.typography.displaySmall,
                     color = colorCifra(estadoTemperatura(it.temperatura))
                 )
@@ -291,7 +302,7 @@ private fun ResumenJefatura(galpones: List<GalponEntity>, alertasActivas: Int, a
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
     ) {
         Column(Modifier.padding(16.dp)) {
-            Text("Resumen", style = MaterialTheme.typography.titleMedium)
+            Text(stringResource(R.string.home_resumen), style = MaterialTheme.typography.titleMedium)
             Spacer(Modifier.height(12.dp))
             Row(Modifier.fillMaxWidth()) {
                 EstadoGalpon.entries.forEach { e ->
@@ -306,8 +317,11 @@ private fun ResumenJefatura(galpones: List<GalponEntity>, alertasActivas: Int, a
                 }
             }
             HorizontalDivider(Modifier.padding(vertical = 12.dp), color = MaterialTheme.colorScheme.outlineVariant)
-            Text("$alertasActivas alertas activas en ${galpones.size} galpones", style = MaterialTheme.typography.bodyMedium)
-            Text("$alertasHoy alertas registradas hoy", style = MaterialTheme.typography.bodySmall,
+            Text(
+                pluralStringResource(R.plurals.home_alertas_activas_en, alertasActivas, alertasActivas, galpones.size),
+                style = MaterialTheme.typography.bodyMedium
+            )
+            Text(pluralStringResource(R.plurals.home_alertas_hoy, alertasHoy, alertasHoy), style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }

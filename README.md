@@ -34,7 +34,7 @@ persistencia local (offline) y notificaciones.
 MVVM con Room como fuente única de verdad:
 
 ```
-UI (Compose) → ViewModel (StateFlow) → GalponRepository → { MockMonitorApi, Room }
+UI (Compose) → ViewModel (StateFlow) → RepositorioGalpones → { MockMonitorApi, Room }
                                                 ↑
                          AlertasWorker (WorkManager, cada 15 min)
 ```
@@ -44,7 +44,14 @@ UI (Compose) → ViewModel (StateFlow) → GalponRepository → { MockMonitorApi
 - `data/db/` — Room: galpones, mediciones, alertas y eventos (con migración 2→3).
 - `data/repository/GalponRepository.kt` — sincroniza la API con Room; una alerta
   activa por galpón, sin duplicados; confirmación de alertas.
+- `AlertaTemperaturasApp.kt` — inyección de dependencias manual: `ContenedorApp`
+  crea una sola vez el repositorio y la sesión; cada ViewModel los recibe por
+  constructor mediante su `Factory`.
+- `data/repository/RepositorioGalpones.kt` — interfaz del repositorio; los
+  ViewModels dependen de ella y en los tests se usa una versión falsa en memoria.
 - `viewmodel/` — un ViewModel por pantalla; `SessionViewModel` para la sesión.
+  `AlertasViewModel` entrega `AlertaUi` (modelo de pantalla) en vez de la entidad de Room.
+- `res/values/strings.xml` — todos los textos de la app, con plurales.
 - `ui/screen/` — pantallas Compose; `ui/navigation/` — Navigation Compose.
 - `work/AlertasWorker.kt` — revisión en segundo plano y notificaciones.
 - `notifications/NotificationHelper.kt` — canal y notificación de alertas críticas.
@@ -59,7 +66,7 @@ normalidad; si empeora (advertencia → crítico) se genera una alerta nueva.
 2. Ejecutar la configuración `app` en un emulador o dispositivo.
 3. Aceptar el permiso de notificaciones (Android 13+).
 
-Tests unitarios (umbrales, coherencia del mock y validación del formulario):
+Tests unitarios (umbrales, coherencia del mock, validación del formulario y `RegistroAccionViewModel` con `runTest` y un repositorio falso):
 
 ```bash
 ./gradlew testDebugUnitTest
