@@ -101,7 +101,7 @@ alerta roja), con tipografía Barlow (licencia OFL, `licenses/Barlow-OFL.txt`) e
 
 ## Documentación
 
-- [Plan de desarrollo](<Plan de desarrollo - Caso 1.md>)
+- [Plan de desarrollo](docs/plan-de-desarrollo.md)
 - [Producto](PRODUCT.md) · [Sistema de diseño](DESIGN.md)
 
 ## Licencia
