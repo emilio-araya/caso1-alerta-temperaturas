@@ -1,5 +1,7 @@
 # Caso 1 — Alerta temprana por altas temperaturas
 
+[![CI](https://github.com/emilio-araya/caso1-alerta-temperaturas/actions/workflows/ci.yml/badge.svg)](https://github.com/emilio-araya/caso1-alerta-temperaturas/actions/workflows/ci.yml)
+
 Proyecto académico (DSY1105 · Desarrollo de Aplicaciones Móviles, Duoc UC).
 
 App Android con Jetpack Compose para que operarios, supervisores y jefaturas de
