@@ -35,6 +35,7 @@ fun AppNavigation(
 ) {
     val estado by sesion.estado.collectAsStateWithLifecycle()
     val pendientes by navegacion.alertasPendientes.collectAsStateWithLifecycle()
+    val red by navegacion.red.collectAsStateWithLifecycle()
 
     // Mientras DataStore no responde no sabemos si hay sesión: así no aparece el login "de paso"
     if (estado is EstadoSesion.Cargando) {
@@ -55,7 +56,10 @@ fun AppNavigation(
         }
     }
 
-    val marco = Marco(rol = rolActual, ancho = anchoVentana, alertasPendientes = pendientes, onNavegar = ::irA)
+    val marco = Marco(
+        rol = rolActual, ancho = anchoVentana, alertasPendientes = pendientes, onNavegar = ::irA,
+        red = red, onReintentar = navegacion::reintentar
+    )
 
     NavHost(navController = navController, startDestination = destinoInicial) {
         composable(AppRoutes.LOGIN) {

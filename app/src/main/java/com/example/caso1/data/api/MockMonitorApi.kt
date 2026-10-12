@@ -6,8 +6,9 @@ import kotlin.math.sin
 import kotlin.random.Random
 
 /**
- * API simulada del sistema de monitoreo.
- * En el MVP no hay backend real: devuelve datos ficticios.
+ * Lógica del servidor de monitoreo simulado: genera los datos ficticios que
+ * [ServidorSimulado] entrega como JSON. La app NO llama a este objeto
+ * directamente: lo consume por HTTP con Retrofit ([MonitorApi]).
  *
  * Los datos son deterministas: cada medición depende solo del galpón y del
  * intervalo de tiempo, así todas las llamadas (estado, alertas, historial)

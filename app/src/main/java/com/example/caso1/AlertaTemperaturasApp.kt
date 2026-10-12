@@ -4,13 +4,19 @@ import android.app.Application
 import android.content.Context
 import androidx.lifecycle.ViewModelProvider.AndroidViewModelFactory.Companion.APPLICATION_KEY
 import androidx.lifecycle.viewmodel.CreationExtras
+import com.example.caso1.data.MonitorConectividad
 import com.example.caso1.data.SessionManager
+import com.example.caso1.data.Sincronizador
+import com.example.caso1.data.api.ClienteApi
+import com.example.caso1.data.api.MonitorApi
+import com.example.caso1.data.api.ServidorSimulado
 import com.example.caso1.data.db.AlertaEntity
 import com.example.caso1.data.db.DatabaseProvider
 import com.example.caso1.data.repository.GalponRepository
 import com.example.caso1.data.repository.RepositorioGalpones
 import com.example.caso1.notifications.NotificationHelper
 import com.example.caso1.work.AlertasWorker
+import kotlinx.coroutines.flow.MutableStateFlow
 
 /**
  * Inyección de dependencias manual: cada dependencia se crea UNA vez aquí y se
@@ -20,12 +26,24 @@ import com.example.caso1.work.AlertasWorker
 class ContenedorApp(contexto: Context) {
     private val app = contexto.applicationContext
 
-    val repositorio: RepositorioGalpones by lazy { GalponRepository(DatabaseProvider.get(app)) }
+    val conectividad: MonitorConectividad by lazy { MonitorConectividad(app) }
+
+    /** Modo demo: simula que el servidor no responde, para mostrar el funcionamiento sin conexión. */
+    val sinConexionSimulada = MutableStateFlow(false)
+
+    /** Cliente HTTP (Retrofit) apuntando al servidor de monitoreo, aquí simulado. */
+    private val api: MonitorApi by lazy {
+        ClienteApi.crear(ServidorSimulado(hayRed = conectividad::hayRed, sinConexionForzada = { sinConexionSimulada.value }))
+    }
+
+    val repositorio: RepositorioGalpones by lazy { GalponRepository(DatabaseProvider.get(app), api) }
     val sesion: SessionManager by lazy { SessionManager(app) }
 
     /** Acciones que necesitan Context, envueltas para que el ViewModel no lo conozca. */
     val notificarCritico: (AlertaEntity) -> Unit = { NotificationHelper.notificarCritico(app, it) }
-    val simularEventoCritico: () -> Int = { AlertasWorker.simularEventoCritico(app) }
+    val programarRevisionDemo: () -> Unit = { AlertasWorker.programarRevision(app) }
+
+    val sincronizador: Sincronizador by lazy { Sincronizador(repositorio, notificarCritico) }
 }
 
 class AlertaTemperaturasApp : Application() {

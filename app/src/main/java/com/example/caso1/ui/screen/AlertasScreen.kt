@@ -116,7 +116,7 @@ private fun TarjetaAlerta(alerta: AlertaUi, puedeConfirmar: Boolean, onConfirmar
         FranjaEstado(
             alerta.nivel.estado,
             alerta.nivel.etiqueta(),
-            extra = stringResource(R.string.alertas_desde, formatoHora(alerta.desde))
+            extra = stringResource(R.string.alertas_desde, formatoMomento(alerta.desde))
         )
         Column(Modifier.padding(16.dp)) {
             Text(tipoAlertaLegible(alerta.tipo), style = MaterialTheme.typography.titleMedium)

@@ -6,10 +6,22 @@ import com.example.caso1.data.db.GalponEntity
 import com.example.caso1.data.db.MedicionEntity
 import com.example.caso1.data.model.Rol
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.StateFlow
+
+/** Estado de la última comunicación con el sistema de monitoreo. */
+enum class EstadoConexion { SIN_DATOS, EN_LINEA, SIN_CONEXION }
+
+/** Resultado de sincronizar con la API. */
+sealed interface ResultadoSincronizacion {
+    /** [nuevasCriticas]: alertas críticas que aparecieron en esta sincronización (para notificar). */
+    data class Correcto(val nuevasCriticas: List<AlertaEntity>) : ResultadoSincronizacion
+    /** No se pudo contactar el servidor: la app sigue mostrando lo guardado en Room. */
+    data object SinConexion : ResultadoSincronizacion
+}
 
 /**
  * Lo que los ViewModels necesitan de los datos. Dependen de esta interfaz y no de
- * Room: en los tests se reemplaza por una implementación falsa en memoria.
+ * Room ni de Retrofit: en los tests se reemplaza por una implementación falsa en memoria.
  */
 interface RepositorioGalpones {
     val galpones: Flow<List<GalponEntity>>
@@ -17,11 +29,15 @@ interface RepositorioGalpones {
     val alertas: Flow<List<AlertaEntity>>
     val eventos: Flow<List<EventoEntity>>
     val ultimasMediciones: Flow<List<MedicionEntity>>
+    val estadoConexion: StateFlow<EstadoConexion>
 
     fun mediciones(galponId: Int): Flow<List<MedicionEntity>>
 
-    /** Sincroniza con la API y devuelve las alertas críticas nuevas. */
-    suspend fun refrescar(): List<AlertaEntity>
+    /** Descarga de la API y guarda en Room. Nunca lanza por falta de red. */
+    suspend fun refrescar(): ResultadoSincronizacion
+
+    /** Modo demo: pide al servidor un pico de calor. Devuelve el galpón afectado, o null sin conexión. */
+    suspend fun simularPicoDeCalor(): Int?
 
     suspend fun confirmarAlerta(alertaId: Int, galponId: Int, rol: Rol, detalle: String)
 

@@ -20,7 +20,8 @@ persistencia local (offline) y notificaciones.
 | F5 | Historial de alertas (activas/resueltas) y acciones, filtrable por galpón | Supervisor, Jefatura |
 | F6 | Registro de acción con formulario validado y pantalla de confirmación | Operario |
 | F7 | Resumen: conteo por estado, alertas activas y alertas del día | Jefatura |
-| F8 | Funciona sin conexión: la UI siempre lee de Room | Todos |
+| F8 | Funciona sin conexión: la UI siempre lee de Room; aviso "Sin conexión" con la hora de los datos y reconexión automática | Todos |
+| F10 | Consumo de la API del sistema de monitoreo con Retrofit (JSON), deslizar para actualizar | Todos |
 | F9 | Diseño adaptable con Window Size Classes (1 columna / 2 columnas / lista + detalle; barra inferior o riel lateral) | Todos |
 
 **Umbrales** (`Umbrales` en `data/model/Modelos.kt`):
@@ -36,12 +37,20 @@ persistencia local (offline) y notificaciones.
 MVVM con Room como fuente única de verdad:
 
 ```
-UI (Compose) → ViewModel (StateFlow) → RepositorioGalpones → { MockMonitorApi, Room }
+UI (Compose) → ViewModel (StateFlow) → RepositorioGalpones → { API (Retrofit + JSON), Room }
                                                 ↑
                          AlertasWorker (WorkManager, cada 15 min)
 ```
 
-- `data/api/MockMonitorApi.kt` — API simulada y determinista: estado, alertas e
+- `data/api/MonitorApi.kt` — endpoints de la API (Retrofit): `GET galpones`,
+  `GET galpones/{id}/mediciones`, `GET alertas/activas`, `POST simulaciones/pico-calor`.
+- `data/api/ServidorSimulado.kt` — el servidor de monitoreo simulado (punto 3.4 del caso):
+  un interceptor de OkHttp que responde JSON. Retrofit, HTTP, JSON y los errores de red
+  son reales; para usar un servidor de verdad se quita el interceptor y se cambia
+  `ClienteApi.URL_BASE`.
+- `data/MonitorConectividad.kt` y `data/Sincronizador.kt` — detectan la red del teléfono y
+  sincronizan la API con Room (al abrir, al deslizar, al volver la conexión y cada 15 min).
+- `data/api/MockMonitorApi.kt` — datos del servidor simulado, deterministas: estado, alertas e
   historial siempre coinciden. Ciclo suave de 24 h con una medición cada 15 min.
 - `data/db/` — Room: galpones, mediciones, alertas y eventos (con migración 2→3).
 - `data/repository/GalponRepository.kt` — sincroniza la API con Room; una alerta
@@ -82,7 +91,10 @@ Tests unitarios (umbrales, coherencia del mock, validación del formulario y `Re
    "Atrás" desde la confirmación vuelve a Galpones, sin poder guardar la acción dos veces.
 4. Menú ⋮ → *Cerrar sesión* → **Supervisor** → pestaña **Historial**: alerta confirmada y acciones.
 5. **Jefatura** → resumen por estado y alertas del día.
-6. Girar el dispositivo o usar una tablet: 2 columnas / lista + detalle con riel lateral.
+6. **Sin conexión**: activar el modo avión (o menú ⋮ → *Simular sin conexión*): aparece el aviso
+   "Sin conexión · mostrando datos guardados de las …" y la app sigue funcionando.
+   Al volver la red se actualiza sola.
+7. Girar el dispositivo o usar una tablet: 2 columnas / lista + detalle con riel lateral.
 
 > En el emulador con Android 16 puede aparecer el aviso "Android App Compatibility (16 KB)":
 > es por librerías nativas de Google (DataStore y Compose), no por la app. Tocar

@@ -6,7 +6,7 @@ import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.example.caso1.R
 import com.example.caso1.contenedor
-import com.example.caso1.data.db.AlertaEntity
+import com.example.caso1.data.Sincronizador
 import com.example.caso1.data.db.GalponEntity
 import com.example.caso1.data.db.MedicionEntity
 import com.example.caso1.data.model.EstadoGalpon
@@ -36,8 +36,9 @@ data class HomeUiState(
 
 class HomeViewModel(
     private val repo: RepositorioGalpones,
-    private val notificarCritico: (AlertaEntity) -> Unit,
-    private val simularEvento: () -> Int
+    private val sincronizador: Sincronizador,
+    private val programarRevisionDemo: () -> Unit,
+    private val sinConexionSimulada: MutableStateFlow<Boolean>
 ) : ViewModel() {
 
     val uiState: StateFlow<HomeUiState> = combine(
@@ -55,19 +56,42 @@ class HomeViewModel(
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), HomeUiState())
 
+    /** true mientras se descarga de la API (indicador de "deslizar para actualizar"). */
+    val actualizando: StateFlow<Boolean> = sincronizador.sincronizando
+
+    /** Modo demo "sin conexión" activado. */
+    val sinConexionDemo: StateFlow<Boolean> = sinConexionSimulada
+
     /** Mensajes de una sola vez para el Snackbar. */
     private val _mensajes = MutableSharedFlow<TextoUi>()
     val mensajes: SharedFlow<TextoUi> = _mensajes
 
-    init { refrescar() }
-
+    /** Deslizar hacia abajo para actualizar. */
     fun refrescar() {
-        viewModelScope.launch { repo.refrescar().forEach(notificarCritico) }
+        viewModelScope.launch { sincronizador.sincronizar() }
     }
 
+    /** Demo: el servidor fuerza un pico de calor y la revisión en segundo plano lo notifica. */
     fun simularEventoCritico() {
-        val id = simularEvento()
-        viewModelScope.launch { _mensajes.emit(TextoUi(R.string.home_simulacion_iniciada, listOf(id))) }
+        viewModelScope.launch {
+            val id = repo.simularPicoDeCalor()
+            if (id == null) {
+                _mensajes.emit(TextoUi(R.string.home_simulacion_sin_conexion))
+            } else {
+                programarRevisionDemo()
+                _mensajes.emit(TextoUi(R.string.home_simulacion_iniciada, listOf(id)))
+            }
+        }
+    }
+
+    /** Demo: alterna el modo sin conexión y sincroniza para mostrar el resultado de inmediato. */
+    fun alternarSinConexion() {
+        val activar = !sinConexionSimulada.value
+        sinConexionSimulada.value = activar
+        viewModelScope.launch {
+            sincronizador.sincronizar()
+            _mensajes.emit(TextoUi(if (activar) R.string.home_sin_conexion_activado else R.string.home_sin_conexion_desactivado))
+        }
     }
 
     private fun armarBoletin(galpones: List<GalponEntity>, ultimas: Map<Int, MedicionEntity>): Boletin? {
@@ -94,7 +118,7 @@ class HomeViewModel(
         val Factory = viewModelFactory {
             initializer {
                 val c = contenedor()
-                HomeViewModel(c.repositorio, c.notificarCritico, c.simularEventoCritico)
+                HomeViewModel(c.repositorio, c.sincronizador, c.programarRevisionDemo, c.sinConexionSimulada)
             }
         }
     }

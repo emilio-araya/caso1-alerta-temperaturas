@@ -10,6 +10,7 @@ import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.material3.*
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -41,6 +42,7 @@ import com.example.caso1.viewmodel.HomeViewModel
  * - Supervisor: galpones ordenados por gravedad.
  * - Jefatura: resumen por estado y alertas del día.
  */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
     marco: Marco,
@@ -51,6 +53,8 @@ fun HomeScreen(
     viewModel: HomeViewModel = viewModel(factory = HomeViewModel.Factory)
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+    val actualizando by viewModel.actualizando.collectAsStateWithLifecycle()
+    val sinConexionDemo by viewModel.sinConexionDemo.collectAsStateWithLifecycle()
     val rol = marco.rol
     var menuAbierto by remember { mutableStateOf(false) }
     val snackbar = remember { SnackbarHostState() }
@@ -77,6 +81,12 @@ fun HomeScreen(
                         text = { Text(stringResource(R.string.home_menu_simular)) },
                         leadingIcon = { Icono(R.drawable.ic_bolt, null) },
                         onClick = { menuAbierto = false; viewModel.simularEventoCritico() }
+                    )
+                    DropdownMenuItem(
+                        text = { Text(stringResource(R.string.home_menu_sin_conexion)) },
+                        leadingIcon = { Icono(R.drawable.ic_cloud_off, null) },
+                        trailingIcon = { Checkbox(checked = sinConexionDemo, onCheckedChange = null) },
+                        onClick = { menuAbierto = false; viewModel.alternarSinConexion() }
                     )
                     DropdownMenuItem(
                         text = { Text(stringResource(R.string.home_menu_cerrar_sesion)) },
@@ -149,6 +159,8 @@ fun HomeScreen(
             }
         }
 
+        // Deslizar hacia abajo para volver a consultar la API (gesto nativo de Android)
+        PullToRefreshBox(isRefreshing = actualizando, onRefresh = viewModel::refrescar, modifier = Modifier.fillMaxSize()) {
         when (marco.ancho) {
             WindowWidthSizeClass.Expanded -> {
                 val detalleVm: DetalleViewModel = viewModel(key = "panel_detalle", factory = DetalleViewModel.Factory)
@@ -175,6 +187,7 @@ fun HomeScreen(
             }
             WindowWidthSizeClass.Medium -> Listado(2, null, Modifier.padding(padding), onVerDetalle)
             else -> Listado(1, null, Modifier.padding(padding), onVerDetalle)
+        }
         }
     }
 }

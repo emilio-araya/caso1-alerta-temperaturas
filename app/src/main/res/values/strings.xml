@@ -81,7 +81,18 @@
         <item quantity="one">%d alerta registrada hoy</item>
         <item quantity="other">%d alertas registradas hoy</item>
     </plurals>
+    <string name="home_menu_sin_conexion">Simular sin conexión (demo)</string>
+    <string name="home_simulacion_sin_conexion">Sin conexión con el sistema de monitoreo. Vuelve a intentarlo con conexión.</string>
+    <string name="home_sin_conexion_activado">Modo sin conexión: la app muestra los datos guardados en el teléfono.</string>
+    <string name="home_sin_conexion_desactivado">Conexión restablecida.</string>
     <string name="home_simulacion_iniciada">Pico de calor simulado en el Galpón %1$d. La alerta llega en 10 s, aunque cierres la app.</string>
+
+    <!-- Conexión con el sistema de monitoreo -->
+    <string name="red_sin_conexion">Sin conexión</string>
+    <string name="red_datos_de">Mostrando datos guardados de las %1$s</string>
+    <string name="red_sin_datos">Aún no hay datos guardados en el teléfono</string>
+    <string name="red_reintentar">Reintentar</string>
+    <string name="red_conectando">Conectando…</string>
 
     <!-- Detalle del galpón -->
     <string name="detalle_temperatura">Temperatura</string>
@@ -111,7 +122,7 @@
     <string name="alertas_confirmar">Confirmar</string>
     <string name="alertas_cancelar">Cancelar</string>
     <string name="alertas_confirmada_snackbar">Alerta de %1$s confirmada</string>
-    <string name="alertas_desde">Desde las %1$s</string>
+    <string name="alertas_desde">Desde %1$s</string>
     <string name="alertas_sin_confirmar">Sin confirmar</string>
     <string name="alertas_detalle_historial">%1$s en %2$s (%3$s)</string>
 

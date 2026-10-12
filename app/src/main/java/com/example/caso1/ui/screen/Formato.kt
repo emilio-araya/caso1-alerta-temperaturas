@@ -136,6 +136,12 @@ fun formatoFechaHora(millis: Long): String = SimpleDateFormat("dd/MM HH:mm", CHI
 
 fun formatoHora(millis: Long): String = SimpleDateFormat("HH:mm", CHILE).format(Date(millis))
 
+/** "14:30" si es de hoy; "09/10 14:30" si no, para que una alerta antigua no parezca reciente. */
+fun formatoMomento(millis: Long, ahora: Long = System.currentTimeMillis()): String {
+    val dia = SimpleDateFormat("yyyyMMdd", CHILE)
+    return if (dia.format(Date(millis)) == dia.format(Date(ahora))) formatoHora(millis) else formatoFechaHora(millis)
+}
+
 // Se evalúa el valor ya redondeado como se muestra: "70 %" nunca sale en dos colores distintos
 fun estadoTemperatura(t: Double): EstadoGalpon = Umbrales.evaluar(Math.round(t * 10) / 10.0, HUMEDAD_NEUTRA)
 fun estadoHumedad(h: Double): EstadoGalpon = Umbrales.evaluar(TEMPERATURA_NEUTRA, Math.round(h).toDouble())

@@ -2,6 +2,9 @@ package com.example.caso1.ui.screen
 
 import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -26,7 +29,9 @@ import com.example.caso1.R
 import com.example.caso1.data.model.EstadoGalpon
 import com.example.caso1.data.model.Rol
 import com.example.caso1.data.model.Umbrales
+import com.example.caso1.data.repository.EstadoConexion
 import com.example.caso1.ui.navigation.AppRoutes
+import com.example.caso1.viewmodel.EstadoRed
 import com.example.caso1.ui.theme.EstiloEstado
 
 @Composable
@@ -135,8 +140,52 @@ data class Marco(
     val rol: Rol?,
     val ancho: WindowWidthSizeClass,
     val alertasPendientes: Int,
-    val onNavegar: (Destino) -> Unit
+    val onNavegar: (Destino) -> Unit,
+    val red: EstadoRed = EstadoRed(),
+    val onReintentar: () -> Unit = {}
 )
+
+/**
+ * Aviso de conectividad (punto 3.3): sin conexión, la app sigue funcionando con
+ * los datos guardados y dice de qué hora son. Usa colores neutros a propósito:
+ * verde, amarillo y rojo están reservados para el estado de los galpones.
+ */
+@Composable
+fun AvisoSinConexion(red: EstadoRed, onReintentar: () -> Unit, modifier: Modifier = Modifier) {
+    AnimatedVisibility(
+        visible = red.conexion == EstadoConexion.SIN_CONEXION,
+        enter = expandVertically(),
+        exit = shrinkVertically(),
+        modifier = modifier
+    ) {
+        Surface(color = MaterialTheme.colorScheme.inverseSurface, contentColor = MaterialTheme.colorScheme.inverseOnSurface) {
+            Row(
+                Modifier.fillMaxWidth().padding(start = 16.dp, end = 8.dp, top = 6.dp, bottom = 6.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icono(R.drawable.ic_cloud_off, null, Modifier.size(20.dp))
+                Spacer(Modifier.width(12.dp))
+                Column(Modifier.weight(1f)) {
+                    Text(stringResource(R.string.red_sin_conexion), style = MaterialTheme.typography.titleSmall)
+                    Text(
+                        red.ultimaActualizacion?.let { stringResource(R.string.red_datos_de, formatoFechaHora(it)) }
+                            ?: stringResource(R.string.red_sin_datos),
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                }
+                if (red.sincronizando) {
+                    CircularProgressIndicator(Modifier.padding(horizontal = 16.dp).size(20.dp), strokeWidth = 2.dp,
+                        color = LocalContentColor.current)
+                } else {
+                    TextButton(
+                        onClick = onReintentar,
+                        colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.inversePrimary)
+                    ) { Text(stringResource(R.string.red_reintentar)) }
+                }
+            }
+        }
+    }
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -193,9 +242,14 @@ fun PantallaPrincipal(
                 }
             },
             floatingActionButton = botonFlotante,
-            snackbarHost = snackbarHost,
-            content = contenido
-        )
+            snackbarHost = snackbarHost
+        ) { padding ->
+            // El aviso va bajo la barra superior y el contenido de cada pantalla debajo de él
+            Column(Modifier.padding(padding).consumeWindowInsets(padding)) {
+                AvisoSinConexion(marco.red, marco.onReintentar)
+                Box(Modifier.weight(1f)) { contenido(PaddingValues()) }
+            }
+        }
     }
 
     if (expandida) {
