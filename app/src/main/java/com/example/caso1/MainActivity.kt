@@ -32,10 +32,10 @@ class MainActivity : ComponentActivity() {
         leerIntent(intent)
         setContent {
             AlertaTemperaturasTheme {
-                // Se recalcula al rotar o redimensionar la ventana
-                val tamano = calculateWindowSizeClass(this)
+                // Se recalcula al rotar o redimensionar la ventana (Guía 9)
+                val tamanoVentana = calculateWindowSizeClass(this)
                 AppNavigation(
-                    anchoVentana = tamano.widthSizeClass,
+                    anchoVentana = tamanoVentana.widthSizeClass,
                     abrirAlertas = abrirAlertas.value,
                     onAlertasAbiertas = { abrirAlertas.value = false }
                 )
