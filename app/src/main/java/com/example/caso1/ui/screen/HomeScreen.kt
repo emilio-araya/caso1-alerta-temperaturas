@@ -24,6 +24,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.caso1.BuildConfig
 import com.example.caso1.R
 import com.example.caso1.data.db.GalponEntity
 import com.example.caso1.data.db.MedicionEntity
@@ -77,17 +78,20 @@ fun HomeScreen(
             Box {
                 IconButton(onClick = { menuAbierto = true }) { Icono(R.drawable.ic_more_vert, stringResource(R.string.accion_mas_opciones)) }
                 DropdownMenu(expanded = menuAbierto, onDismissRequest = { menuAbierto = false }) {
-                    DropdownMenuItem(
-                        text = { Text(stringResource(R.string.home_menu_simular)) },
-                        leadingIcon = { Icono(R.drawable.ic_bolt, null) },
-                        onClick = { menuAbierto = false; viewModel.simularEventoCritico() }
-                    )
-                    DropdownMenuItem(
-                        text = { Text(stringResource(R.string.home_menu_sin_conexion)) },
-                        leadingIcon = { Icono(R.drawable.ic_cloud_off, null) },
-                        trailingIcon = { Checkbox(checked = sinConexionDemo, onCheckedChange = null) },
-                        onClick = { menuAbierto = false; viewModel.alternarSinConexion() }
-                    )
+                    // Demo tools exist only in debug builds; release keeps just the real actions
+                    if (BuildConfig.DEBUG) {
+                        DropdownMenuItem(
+                            text = { Text(stringResource(R.string.home_menu_simular)) },
+                            leadingIcon = { Icono(R.drawable.ic_bolt, null) },
+                            onClick = { menuAbierto = false; viewModel.simularEventoCritico() }
+                        )
+                        DropdownMenuItem(
+                            text = { Text(stringResource(R.string.home_menu_sin_conexion)) },
+                            leadingIcon = { Icono(R.drawable.ic_cloud_off, null) },
+                            trailingIcon = { Checkbox(checked = sinConexionDemo, onCheckedChange = null) },
+                            onClick = { menuAbierto = false; viewModel.alternarSinConexion() }
+                        )
+                    }
                     DropdownMenuItem(
                         text = { Text(stringResource(R.string.home_menu_cerrar_sesion)) },
                         leadingIcon = { Icono(R.drawable.ic_logout, null) },

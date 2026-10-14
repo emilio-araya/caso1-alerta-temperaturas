@@ -97,6 +97,8 @@ cd mock-api && npm test   # endpoints y umbrales de la API simulada
 
 ## Guion de demo
 
+Las opciones *Simular…* del menú ⋮ solo aparecen en la versión **debug** (la que instala Android Studio); la versión release no las incluye.
+
 1. Entrar como **Operario** → menú ⋮ → *Simular pico de calor (demo)* → botón Inicio del teléfono.
 2. A los 10 s llega la notificación → tocarla abre directo **Alertas** → **Confirmar**.
 3. Botón **Registrar acción** (formulario validado: galpón, tipo y descripción) → confirmación.
