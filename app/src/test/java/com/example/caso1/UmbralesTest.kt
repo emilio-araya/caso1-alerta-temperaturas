@@ -17,6 +17,32 @@ class UmbralesTest {
         assertEquals(EstadoGalpon.CRITICO, Umbrales.evaluar(24.0, 85.0))
     }
 
+    @Test fun bordesDeTemperatura() {
+        // Humedad normal fija para aislar la temperatura
+        assertEquals(EstadoGalpon.ADVERTENCIA, Umbrales.evaluar(17.9, 60.0))
+        assertEquals(EstadoGalpon.NORMAL, Umbrales.evaluar(18.0, 60.0))
+        assertEquals(EstadoGalpon.NORMAL, Umbrales.evaluar(28.0, 60.0))
+        assertEquals(EstadoGalpon.ADVERTENCIA, Umbrales.evaluar(28.1, 60.0))
+        assertEquals(EstadoGalpon.ADVERTENCIA, Umbrales.evaluar(32.0, 60.0))
+        assertEquals(EstadoGalpon.CRITICO, Umbrales.evaluar(32.1, 60.0))
+    }
+
+    @Test fun bordesDeHumedad() {
+        // Temperatura normal fija para aislar la humedad
+        assertEquals(EstadoGalpon.ADVERTENCIA, Umbrales.evaluar(24.0, 49.9))
+        assertEquals(EstadoGalpon.NORMAL, Umbrales.evaluar(24.0, 50.0))
+        assertEquals(EstadoGalpon.NORMAL, Umbrales.evaluar(24.0, 70.0))
+        assertEquals(EstadoGalpon.ADVERTENCIA, Umbrales.evaluar(24.0, 70.1))
+        assertEquals(EstadoGalpon.ADVERTENCIA, Umbrales.evaluar(24.0, 80.0))
+        assertEquals(EstadoGalpon.CRITICO, Umbrales.evaluar(24.0, 80.1))
+    }
+
+    @Test fun estadoFinalEsElPeorDeLosDos() {
+        assertEquals(EstadoGalpon.CRITICO, Umbrales.evaluar(30.0, 85.0))      // advertencia + crítico
+        assertEquals(EstadoGalpon.CRITICO, Umbrales.evaluar(33.0, 75.0))      // crítico + advertencia
+        assertEquals(EstadoGalpon.ADVERTENCIA, Umbrales.evaluar(24.0, 75.0))  // normal + advertencia
+    }
+
     @Test fun causaDeLaAlerta() {
         assertNull(Umbrales.causa(24.0, 60.0))
         assertEquals("TEMPERATURA_ALTA", Umbrales.causa(30.0, 60.0))   // antes salía HUMEDAD_ALTA
