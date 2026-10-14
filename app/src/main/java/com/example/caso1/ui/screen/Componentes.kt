@@ -3,6 +3,8 @@ package com.example.caso1.ui.screen
 import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.Canvas
@@ -11,6 +13,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -46,12 +49,15 @@ fun Icono(@DrawableRes id: Int, descripcion: String?, modifier: Modifier = Modif
 @Composable
 fun FranjaEstado(estado: EstadoGalpon, texto: String, modifier: Modifier = Modifier, extra: String? = null) {
     val c = estado.colores()
+    // A shed changing state fades to its new color instead of jumping (Guía 12)
+    val fondo by animateColorAsState(c.franja, tween(450), label = "franjaEstado")
+    val contenido by animateColorAsState(c.sobreFranja, tween(450), label = "franjaEstadoTexto")
     Row(
-        modifier.fillMaxWidth().background(c.franja).padding(horizontal = 16.dp, vertical = 7.dp),
+        modifier.fillMaxWidth().background(fondo).padding(horizontal = 16.dp, vertical = 7.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Text(texto.uppercase(), style = EstiloEstado, color = c.sobreFranja, modifier = Modifier.weight(1f))
-        extra?.let { Text(it, style = MaterialTheme.typography.labelMedium, color = c.sobreFranja) }
+        Text(texto.uppercase(), style = EstiloEstado, color = contenido, modifier = Modifier.weight(1f))
+        extra?.let { Text(it, style = MaterialTheme.typography.labelMedium, color = contenido) }
     }
 }
 
