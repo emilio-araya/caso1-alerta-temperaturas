@@ -95,6 +95,13 @@ Tests unitarios (umbrales, coherencia del mock, validación del formulario y `Re
 cd mock-api && npm test   # endpoints y umbrales de la API simulada
 ```
 
+Test instrumentado (requiere un emulador o dispositivo conectado): con la API caída, sin red o
+con error del servidor, el repositorio sigue entregando los datos guardados en Room.
+
+```bash
+./gradlew connectedDebugAndroidTest
+```
+
 ## Guion de demo
 
 Las opciones *Simular…* del menú ⋮ solo aparecen en la versión **debug** (la que instala Android Studio); la versión release no las incluye.
