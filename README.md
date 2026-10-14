@@ -44,10 +44,13 @@ UI (Compose) → ViewModel (StateFlow) → RepositorioGalpones → { API (Retrof
 
 - `data/api/MonitorApi.kt` — endpoints de la API (Retrofit): `GET galpones`,
   `GET galpones/{id}/mediciones`, `GET alertas/activas`, `POST simulaciones/pico-calor`.
-- `data/api/ServidorSimulado.kt` — el servidor de monitoreo simulado (punto 3.4 del caso):
-  un interceptor de OkHttp que responde JSON. Retrofit, HTTP, JSON y los errores de red
-  son reales; para usar un servidor de verdad se quita el interceptor y se cambia
-  `ClienteApi.URL_BASE`.
+- `mock-api/` — la API simulada del sistema de monitoreo (punto 3.4 del caso), servida con
+  **json-server** en el PC. La app la consume por HTTP con Retrofit; la URL viene de
+  `BuildConfig.API_URL_BASE` (propiedad Gradle `caso1.apiUrl`). Ver `mock-api/README.md`.
+- `data/api/InterceptorConectividad.kt` — corta la petición sin red o con el modo demo
+  "sin conexión", para que la app use los datos guardados en Room.
+- `data/api/ServidorSimulado.kt` — alternativa sin PC: un interceptor de OkHttp que responde el
+  mismo JSON dentro de la app. Se activa compilando con `-Pcaso1.apiSimulada=true`.
 - `data/MonitorConectividad.kt` y `data/Sincronizador.kt` — detectan la red del teléfono y
   sincronizan la API con Room (al abrir, al deslizar, al volver la conexión y cada 15 min).
 - `data/api/MockMonitorApi.kt` — datos del servidor simulado, deterministas: estado, alertas e
@@ -73,14 +76,23 @@ normalidad; si empeora (advertencia → crítico) se genera una alerta nueva.
 
 ## Cómo ejecutar
 
-1. Abrir el proyecto en Android Studio (Gradle descarga el JDK 25 configurado; minSdk 24, targetSdk 37).
-2. Ejecutar la configuración `app` en un emulador o dispositivo.
-3. Aceptar el permiso de notificaciones (Android 13+).
+1. Levantar la API simulada (requiere Node.js 18+):
+   ```bash
+   cd mock-api && npm install && npm start
+   npm run android   # en otra terminal: adb reverse tcp:3000 tcp:3000
+   ```
+2. Abrir el proyecto en Android Studio (Gradle descarga el JDK 25 configurado; minSdk 24, targetSdk 37).
+3. Ejecutar la configuración `app` en un emulador o dispositivo.
+4. Aceptar el permiso de notificaciones (Android 13+).
+
+Sin el PC disponible, compilar con el servidor simulado interno:
+`./gradlew installDebug -Pcaso1.apiSimulada=true`.
 
 Tests unitarios (umbrales, coherencia del mock, validación del formulario y `RegistroAccionViewModel` con `runTest` y un repositorio falso):
 
 ```bash
 ./gradlew testDebugUnitTest
+cd mock-api && npm test   # endpoints y umbrales de la API simulada
 ```
 
 ## Guion de demo

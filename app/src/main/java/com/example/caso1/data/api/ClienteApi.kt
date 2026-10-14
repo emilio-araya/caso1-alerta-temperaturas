@@ -11,21 +11,26 @@ import java.util.concurrent.TimeUnit
 /** Construye el cliente Retrofit de [MonitorApi]. */
 object ClienteApi {
 
-    /** Dirección del sistema de monitoreo. Con un servidor real, solo cambia esta línea. */
+    /** Dirección usada con el servidor simulado dentro de la app ([ServidorSimulado]). */
     const val URL_BASE = "https://monitoreo.galpones.example/api/v1/"
 
     private val json = Json { ignoreUnknownKeys = true }   // tolera campos nuevos del servidor
 
-    fun crear(servidor: Interceptor?): MonitorApi {
+    /**
+     * @param interceptores se ejecutan en orden: primero [InterceptorConectividad] (si se usa),
+     *   después, opcionalmente, un servidor simulado que responde sin salir a la red.
+     * @param urlBase dirección del servidor; con json-server viene de BuildConfig.
+     */
+    fun crear(vararg interceptores: Interceptor, urlBase: String = URL_BASE): MonitorApi {
         val http = OkHttpClient.Builder()
             // Conectividad limitada: no esperar para siempre a una red que no responde
             .connectTimeout(10, TimeUnit.SECONDS)
             .readTimeout(10, TimeUnit.SECONDS)
-            .apply { servidor?.let(::addInterceptor) }
+            .apply { interceptores.forEach(::addInterceptor) }
             .build()
 
         return Retrofit.Builder()
-            .baseUrl(URL_BASE)
+            .baseUrl(urlBase)
             .client(http)
             .addConverterFactory(json.asConverterFactory("application/json".toMediaType()))
             .build()

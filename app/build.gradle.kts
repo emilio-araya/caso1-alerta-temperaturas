@@ -19,6 +19,15 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        // API del sistema de monitoreo. Por defecto: json-server en el PC, alcanzado con
+        // `adb reverse tcp:3000 tcp:3000` (emulador o celular por USB). Alternativa en emulador:
+        // -Pcaso1.apiUrl=http://10.0.2.2:3000/api/v1/ . Con caso1.apiSimulada=true la app usa
+        // el servidor simulado interno y no necesita el PC. Ver mock-api/README.md.
+        val apiUrl = providers.gradleProperty("caso1.apiUrl").getOrElse("http://localhost:3000/api/v1/")
+        val apiSimulada = providers.gradleProperty("caso1.apiSimulada").getOrElse("false").toBoolean()
+        buildConfigField("String", "API_URL_BASE", "\"$apiUrl\"")
+        buildConfigField("boolean", "API_SIMULADA", apiSimulada.toString())
     }
 
     buildTypes {
@@ -34,6 +43,7 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 }
 

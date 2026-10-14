@@ -17,6 +17,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.serialization.SerializationException
+import android.util.Log
 import retrofit2.HttpException
 import java.io.IOException
 
@@ -47,10 +48,13 @@ class GalponRepository(
         val descarga = try {
             descargar()
         } catch (e: IOException) {          // sin red, tiempo de espera agotado
+            Log.w(TAG, "Sync failed: no connection", e)
             null
         } catch (e: HttpException) {        // el servidor respondió 4xx/5xx
+            Log.w(TAG, "Sync failed: HTTP ${e.code()}", e)
             null
         } catch (e: SerializationException) { // JSON con un formato inesperado
+            Log.w(TAG, "Sync failed: unexpected JSON", e)
             null
         }
         if (descarga == null) {
@@ -121,9 +125,11 @@ class GalponRepository(
     override suspend fun simularPicoDeCalor(): Int? = try {
         api.simularPicoDeCalor().galponId
     } catch (e: IOException) {
+        Log.w(TAG, "Heat peak simulation failed: no connection", e)
         _estadoConexion.value = EstadoConexion.SIN_CONEXION
         null
     } catch (e: HttpException) {
+        Log.w(TAG, "Heat peak simulation failed: HTTP ${e.code()}", e)
         null
     }
 
@@ -152,3 +158,5 @@ const val ACCION_CONFIRMAR = "CONFIRMACION_ALERTA"
 
 /** Las mediciones se guardan 24 h (96 lecturas por galpón, una cada 15 min). */
 const val RETENCION_MEDICIONES_MS = 24 * 60 * 60_000L
+
+private const val TAG = "GalponRepository"

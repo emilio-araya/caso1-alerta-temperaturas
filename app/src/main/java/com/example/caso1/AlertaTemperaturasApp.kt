@@ -8,6 +8,7 @@ import com.example.caso1.data.MonitorConectividad
 import com.example.caso1.data.SessionManager
 import com.example.caso1.data.Sincronizador
 import com.example.caso1.data.api.ClienteApi
+import com.example.caso1.data.api.InterceptorConectividad
 import com.example.caso1.data.api.MonitorApi
 import com.example.caso1.data.api.ServidorSimulado
 import com.example.caso1.data.db.AlertaEntity
@@ -31,9 +32,19 @@ class ContenedorApp(contexto: Context) {
     /** Modo demo: simula que el servidor no responde, para mostrar el funcionamiento sin conexión. */
     val sinConexionSimulada = MutableStateFlow(false)
 
-    /** Cliente HTTP (Retrofit) apuntando al servidor de monitoreo, aquí simulado. */
+    /**
+     * Cliente HTTP (Retrofit) del sistema de monitoreo: json-server en el PC por defecto,
+     * o el servidor simulado interno si se compiló con caso1.apiSimulada=true.
+     */
     private val api: MonitorApi by lazy {
-        ClienteApi.crear(ServidorSimulado(hayRed = conectividad::hayRed, sinConexionForzada = { sinConexionSimulada.value }))
+        if (BuildConfig.API_SIMULADA) {
+            ClienteApi.crear(ServidorSimulado(hayRed = conectividad::hayRed, sinConexionForzada = { sinConexionSimulada.value }))
+        } else {
+            ClienteApi.crear(
+                InterceptorConectividad(hayRed = conectividad::hayRed, sinConexionForzada = { sinConexionSimulada.value }),
+                urlBase = BuildConfig.API_URL_BASE
+            )
+        }
     }
 
     val repositorio: RepositorioGalpones by lazy { GalponRepository(DatabaseProvider.get(app), api) }
