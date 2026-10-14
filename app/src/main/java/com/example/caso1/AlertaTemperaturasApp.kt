@@ -63,6 +63,8 @@ class AlertaTemperaturasApp : Application() {
 
     override fun onCreate() {
         super.onCreate()
+        // The channel must exist before any notification, including those posted by WorkManager
+        NotificationHelper.crearCanal(this)
         contenedor = ContenedorApp(this)
     }
 }

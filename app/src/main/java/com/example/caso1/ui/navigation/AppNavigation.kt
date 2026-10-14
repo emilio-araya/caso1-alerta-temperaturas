@@ -51,8 +51,10 @@ fun AppNavigation(
     fun irA(destino: Destino) {
         if (destino == Destino.GALPONES) navController.popBackStack(AppRoutes.HOME, inclusive = false)
         else navController.navigate(destino.ruta) {
-            popUpTo(AppRoutes.HOME)
+            // Keep each tab's scroll and state when switching between tabs
+            popUpTo(AppRoutes.HOME) { saveState = true }
             launchSingleTop = true
+            restoreState = true
         }
     }
 

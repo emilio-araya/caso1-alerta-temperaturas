@@ -21,7 +21,8 @@ object NotificationHelper {
     /** Extra del Intent: al tocar la notificación la app abre directo en Alertas. */
     const val EXTRA_ABRIR_ALERTAS = "abrir_alertas"
 
-    private fun crearCanal(context: Context) {
+    /** Creates the alerts channel. Idempotent; called once from Application.onCreate. */
+    fun crearCanal(context: Context) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val canal = NotificationChannel(
                 CHANNEL_ID,
@@ -35,7 +36,6 @@ object NotificationHelper {
     fun notificarCritico(context: Context, alerta: AlertaEntity) {
         // Android 13+: sin el permiso POST_NOTIFICATIONS concedido no se puede notificar
         if (!NotificationManagerCompat.from(context).areNotificationsEnabled()) return
-        crearCanal(context)
         val intent = Intent(context, MainActivity::class.java).apply {
             putExtra(EXTRA_ABRIR_ALERTAS, true)
             flags = Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP
