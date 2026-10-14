@@ -8,8 +8,12 @@ const { evaluar, HISTORIAL } = require('./datos');
 let http;
 let base;
 
+// Fixed clock in the middle of a 15-minute interval: consecutive requests never straddle
+// an interval boundary, so every response comes from the same set of readings.
+const AHORA = Date.UTC(2026, 9, 14, 12, 7, 30);
+
 before(async () => {
-  http = crearServidor().listen(0);
+  http = crearServidor({ reloj: () => AHORA }).listen(0);
   await new Promise((resolve) => http.once('listening', resolve));
   base = `http://127.0.0.1:${http.address().port}/api/v1`;
 });
@@ -31,7 +35,9 @@ test('thresholds match the app (Umbrales in Modelos.kt) at the boundaries', () =
   assert.equal(evaluar(24, 80.0), 'ADVERTENCIA');
   assert.equal(evaluar(24, 80.1), 'CRITICO');
   assert.equal(evaluar(17.9, 60), 'ADVERTENCIA');
+  assert.equal(evaluar(18.0, 60), 'NORMAL');
   assert.equal(evaluar(24, 49.9), 'ADVERTENCIA');
+  assert.equal(evaluar(24, 50.0), 'NORMAL');
 });
 
 test('GET galpones returns the 4 sheds with a state', async () => {
@@ -47,7 +53,7 @@ test('GET galpones/:id/mediciones returns that shed only, newest first', async (
   assert.equal(body.length, HISTORIAL);
   assert.ok(body.every((m) => m.galponId === 2));
   for (let i = 1; i < body.length; i++) assert.ok(body[i - 1].fechaHora > body[i].fechaHora);
-  assert.ok(Date.now() - body[0].fechaHora < 15 * 60_000, 'latest reading is from the current interval');
+  assert.ok(AHORA - body[0].fechaHora < 15 * 60_000, 'latest reading is from the current interval');
 });
 
 test('GET galpones/99/mediciones answers 404', async () => {

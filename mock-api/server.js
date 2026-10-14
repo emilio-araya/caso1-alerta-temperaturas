@@ -9,20 +9,21 @@
 const jsonServer = require('json-server');
 const { generarDb, simularPicoDeCalor, HISTORIAL } = require('./datos');
 
-function crearServidor() {
+/** @param reloj returns the current time in ms; tests pass a fixed clock. */
+function crearServidor({ reloj = Date.now } = {}) {
   const server = jsonServer.create();
-  const router = jsonServer.router(generarDb());
+  const router = jsonServer.router(generarDb(reloj()));
 
   server.use(jsonServer.defaults({ logger: process.env.NODE_ENV !== 'test' }));
 
   // Data depends on the current time: refresh the in-memory database before each request.
   server.use((req, res, next) => {
-    router.db.setState(generarDb());
+    router.db.setState(generarDb(reloj()));
     next();
   });
 
   server.post('/api/v1/simulaciones/pico-calor', (req, res) => {
-    res.json({ galponId: simularPicoDeCalor() });
+    res.json({ galponId: simularPicoDeCalor(reloj()) });
   });
 
   // Unknown shed: 404, like the in-app simulated server.
@@ -43,7 +44,8 @@ function crearServidor() {
 
 if (require.main === module) {
   const puerto = Number(process.env.PORT) || 3000;
-  crearServidor().listen(puerto, '0.0.0.0', () => {
+  // Loopback only: enough for adb reverse and for the emulator's 10.0.2.2, not exposed to the LAN.
+  crearServidor().listen(puerto, '127.0.0.1', () => {
     console.log(`Monitoring API on http://localhost:${puerto}/api/v1/`);
     console.log(`Android device/emulator: run "npm run android" (adb reverse tcp:${puerto} tcp:${puerto}).`);
   });
