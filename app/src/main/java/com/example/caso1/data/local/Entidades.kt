@@ -39,7 +39,10 @@ data class AlertaEntity(
     val fechaHora: Long,
     // Confirmación ("acuso recibo"): la alerta sigue activa mientras dure la condición
     val confirmadaPor: String? = null,
-    val confirmadaEn: Long? = null
+    val confirmadaEn: Long? = null,
+    // Medición que produjo la alerta (respuesta 6). Null en alertas guardadas antes de este campo.
+    val temperatura: Double? = null,
+    val humedad: Double? = null
 )
 
 /** Evento (acción registrada) guardado localmente en DataStore. */
@@ -49,5 +52,7 @@ data class EventoEntity(
     val galponId: Int,
     val descripcion: String,
     val accionRegistrada: String?,
-    val fechaHora: Long
+    val fechaHora: Long,
+    // Rol de quien registró la acción ("OPERARIO"). Null en eventos guardados antes de este campo.
+    val usuario: String? = null
 )

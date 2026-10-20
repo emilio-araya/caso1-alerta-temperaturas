@@ -29,7 +29,9 @@ data class AlertaUi(
     val nivel: NivelAlerta,
     val desde: Long,
     val confirmadaPor: Rol?,
-    val confirmadaEn: Long?
+    val confirmadaEn: Long?,
+    val temperatura: Double?,  // medición que produjo la alerta
+    val humedad: Double?
 ) {
     val confirmada: Boolean get() = confirmadaPor != null
 }
@@ -43,7 +45,9 @@ fun AlertaEntity.aAlertaUi(galpon: GalponEntity?) = AlertaUi(
     nivel = nivel,
     desde = fechaHora,
     confirmadaPor = confirmadaPor?.let { runCatching { Rol.valueOf(it) }.getOrNull() },
-    confirmadaEn = confirmadaEn
+    confirmadaEn = confirmadaEn,
+    temperatura = temperatura,
+    humedad = humedad
 )
 
 data class AlertasUiState(

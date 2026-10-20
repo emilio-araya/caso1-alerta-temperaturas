@@ -15,6 +15,7 @@ import com.example.caso1.data.model.ConfigUmbrales
 import com.example.caso1.data.repository.ACCION_CONFIRMAR
 import com.example.caso1.ui.theme.ColoresEstado
 import com.example.caso1.ui.theme.LocalPaletaEstados
+import com.example.caso1.viewmodel.RangoHistorial
 import com.example.caso1.viewmodel.TipoAccion
 import java.text.SimpleDateFormat
 import java.util.*
@@ -128,6 +129,32 @@ fun textoConfirmacion(por: Rol?, en: Long?): String =
 fun textoConfirmacion(porCodigo: String?, en: Long?): String =
     textoConfirmacion(porCodigo?.let { runCatching { Rol.valueOf(it) }.getOrNull() }, en)
 
+/** "Atendida por Supervisor · 08/10 23:40", para el estado de atención del historial. */
+@Composable
+fun textoAtencion(porCodigo: String?, en: Long?): String =
+    if (porCodigo == null) stringResource(R.string.pendiente_confirmar)
+    else stringResource(
+        R.string.atendida_por,
+        usuarioLegible(porCodigo),
+        en?.let(::formatoFechaHora) ?: ""
+    )
+
+/** Código de rol guardado ("OPERARIO") → texto visible; si es desconocido se muestra tal cual. */
+@Composable
+fun usuarioLegible(codigo: String?): String =
+    if (codigo == null) stringResource(R.string.historial_sin_usuario)
+    else runCatching { Rol.valueOf(codigo) }.getOrNull()?.etiqueta() ?: codigo
+
+@StringRes
+fun RangoHistorial.etiquetaRes(): Int = when (this) {
+    RangoHistorial.HOY -> R.string.historial_rango_hoy
+    RangoHistorial.SEMANA -> R.string.historial_rango_semana
+    RangoHistorial.TODO -> R.string.historial_rango_todo
+}
+
+@Composable
+fun RangoHistorial.etiqueta(): String = stringResource(etiquetaRes())
+
 // ---------- Galpones ----------
 
 @Composable
@@ -144,6 +171,20 @@ fun nombreGalpon(g: GalponEntity?, id: Int): String = nombreGalpon(g?.granja, g?
 fun cifra(valor: Double, decimales: Int = 1): String = String.format(CHILE, "%.${decimales}f", valor)
 
 fun formatoFechaHora(millis: Long): String = SimpleDateFormat("dd/MM HH:mm", CHILE).format(Date(millis))
+
+/**
+ * Medición de una alerta: "31,4 °C · Humedad 78 %". Si falta una parte (alertas antiguas)
+ * se muestra solo la que existe, y null si no hay ninguna.
+ */
+@Composable
+fun textoMedicion(temperatura: Double?, humedad: Double?): String? {
+    val t = temperatura?.let { stringResource(R.string.medicion_temperatura, cifra(it)) }
+    val h = humedad?.let { stringResource(R.string.medicion_humedad, cifra(it, 0)) }
+    return when {
+        t != null && h != null -> stringResource(R.string.medicion_completa, t, h)
+        else -> t ?: h
+    }
+}
 
 fun formatoHora(millis: Long): String = SimpleDateFormat("HH:mm", CHILE).format(Date(millis))
 

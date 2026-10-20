@@ -8,7 +8,9 @@ import androidx.lifecycle.viewmodel.viewModelFactory
 import com.example.caso1.R
 import com.example.caso1.contenedor
 import com.example.caso1.data.local.GalponEntity
+import com.example.caso1.data.model.Rol
 import com.example.caso1.data.repository.RepositorioGalpones
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -66,6 +68,7 @@ data class RegistroAccionState(
 
 class RegistroAccionViewModel(
     private val repo: RepositorioGalpones,
+    private val rol: Flow<Rol?>,
     private val reloj: () -> Long = System::currentTimeMillis
 ) : ViewModel() {
 
@@ -111,7 +114,8 @@ class RegistroAccionViewModel(
                 return@launch
             }
             val descripcion = s.descripcion.trim()
-            repo.registrarAccion(galpon.id, tipo.name, descripcion)
+            // Queda guardado quién hizo la acción (respuesta 12); sin sesión, sin usuario
+            repo.registrarAccion(galpon.id, tipo.name, descripcion, rol.first()?.name)
             // El formulario queda limpio: volver atrás no permite guardar la misma acción otra vez
             _state.value = RegistroAccionState(
                 registrado = true,
@@ -125,7 +129,7 @@ class RegistroAccionViewModel(
 
     companion object {
         val Factory = viewModelFactory {
-            initializer { RegistroAccionViewModel(contenedor().repositorio) }
+            initializer { RegistroAccionViewModel(contenedor().repositorio, contenedor().sesion.rol) }
         }
     }
 }

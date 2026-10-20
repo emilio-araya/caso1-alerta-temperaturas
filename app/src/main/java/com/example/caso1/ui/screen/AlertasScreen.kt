@@ -134,6 +134,10 @@ private fun TarjetaAlerta(
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
+            // Medición que produjo la alerta (respuesta 6); las alertas antiguas no la tienen
+            textoMedicion(alerta.temperatura, alerta.humedad)?.let {
+                Text(it, style = MaterialTheme.typography.bodySmall)
+            }
             Spacer(Modifier.height(12.dp))
             AccionRecomendada(alerta.nivel.estado, onRegistrarCorrectiva = onRegistrarCorrectiva)
             Spacer(Modifier.height(12.dp))

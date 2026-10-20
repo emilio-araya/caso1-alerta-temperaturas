@@ -137,11 +137,24 @@
     <string name="historial_tab_alertas">Alertas (%1$d)</string>
     <string name="historial_tab_acciones">Acciones (%1$d)</string>
     <string name="historial_todos">Todos</string>
+    <string name="historial_rango_hoy">Hoy</string>
+    <string name="historial_rango_semana">Últimos 7 días</string>
+    <string name="historial_rango_todo">Todo</string>
     <string name="historial_sin_alertas_titulo">Sin alertas registradas</string>
     <string name="historial_sin_alertas_texto">Aquí quedan todas las alertas, activas y resueltas.</string>
     <string name="historial_sin_acciones_titulo">Aún no hay acciones</string>
     <string name="historial_sin_acciones_texto">Las acciones que registren los operarios y las alertas confirmadas aparecerán aquí.</string>
+    <string name="historial_atendida">Atendida</string>
+    <string name="historial_pendiente">Pendiente</string>
     <string name="historial_resuelta">Resuelta</string>
+    <string name="historial_sin_usuario">Sin identificar</string>
+    <string name="atendida_por">Atendida por %1$s · %2$s</string>
+    <string name="meta_usuario_galpon_fecha">%1$s · %2$s · %3$s</string>
+
+    <!-- Medición registrada en una alerta -->
+    <string name="medicion_temperatura">%1$s °C</string>
+    <string name="medicion_humedad">Humedad %1$s %%</string>
+    <string name="medicion_completa">%1$s · %2$s</string>
     <string name="accion_confirmacion">Confirmación de alerta</string>
     <string name="accion_evento">Evento</string>
 

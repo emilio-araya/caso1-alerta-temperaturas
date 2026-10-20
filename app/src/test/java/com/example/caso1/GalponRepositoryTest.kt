@@ -159,7 +159,10 @@ class GalponRepositoryTest {
         val r = repo.refrescar()
 
         assertEquals(ResultadoSincronizacion.Correcto(emptyList()), r)
-        val esperada = AlertaEntity(1, 1, "TEMPERATURA_ALTA", NivelAlerta.CRITICO, true, ahora, "SUPERVISOR", ahora + 1_000)
+        val esperada = AlertaEntity(
+            1, 1, "TEMPERATURA_ALTA", NivelAlerta.CRITICO, true, ahora, "SUPERVISOR", ahora + 1_000,
+            temperatura = 33.5, humedad = 60.0
+        )
         assertEquals(listOf(esperada), repo.alertas.first())
         assertEquals(listOf(esperada), repo.alertasActivas.first())
     }
@@ -172,10 +175,10 @@ class GalponRepositoryTest {
         assertEquals(ResultadoSincronizacion.Correcto(emptyList()), repo.refrescar())
 
         api.mediciones = mapOf(1 to listOf(MedicionDto(1, 33.5, 60.0, ahora + 5)))   // CRITICO
-        val nueva = AlertaEntity(2, 1, "TEMPERATURA_ALTA", NivelAlerta.CRITICO, true, ahora + 5)
+        val nueva = AlertaEntity(2, 1, "TEMPERATURA_ALTA", NivelAlerta.CRITICO, true, ahora + 5, temperatura = 33.5, humedad = 60.0)
         assertEquals(ResultadoSincronizacion.Correcto(listOf(nueva)), repo.refrescar())
 
-        val antigua = AlertaEntity(1, 1, "TEMPERATURA_ALTA", NivelAlerta.ADVERTENCIA, false, ahora)
+        val antigua = AlertaEntity(1, 1, "TEMPERATURA_ALTA", NivelAlerta.ADVERTENCIA, false, ahora, temperatura = 30.0, humedad = 60.0)
         assertEquals(listOf(nueva, antigua), repo.alertas.first())
         assertEquals(listOf(nueva), repo.alertasActivas.first())
 
@@ -216,7 +219,44 @@ class GalponRepositoryTest {
         assertEquals(ResultadoSincronizacion.Correcto(emptyList()), repo.refrescar())
 
         assertEquals(EstadoGalpon.ADVERTENCIA, repo.galpones.first().single().estado)
-        assertEquals(listOf(AlertaEntity(1, 1, "HUMEDAD_ALTA", NivelAlerta.ADVERTENCIA, true, ahora)), repo.alertas.first())
+        assertEquals(listOf(AlertaEntity(1, 1, "HUMEDAD_ALTA", NivelAlerta.ADVERTENCIA, true, ahora, temperatura = 24.0, humedad = 75.0)), repo.alertas.first())
+    }
+
+    // La alerta guarda la medición que la produjo (respuesta 6: historial con "medición registrada")
+
+    @Test fun laAlertaSincronizadaGuardaLaMedicionQueLaGenero() = runBlocking {
+        val repo = GalponRepository(abrirAlmacen(), ApiControlada(ahora), reloj = { ahora })
+
+        repo.refrescar()
+
+        val alerta = repo.alertasActivas.first().single()
+        assertEquals(33.5, alerta.temperatura!!, 0.0)
+        assertEquals(60.0, alerta.humedad!!, 0.0)
+    }
+
+    @Test fun laAlertaSimuladaGuardaLaMedicionSimulada() = runBlocking {
+        val api = ApiControlada(ahora).apply { mediciones = mapOf(1 to emptyList()) }
+        val repo = GalponRepository(abrirAlmacen(), api, reloj = { ahora })
+        repo.refrescar()   // galpón sin lecturas: sin alerta
+
+        repo.registrarMedicionSimulada(1, 35.0, 61.0)
+
+        val alerta = repo.alertasActivas.first().single()
+        assertEquals(35.0, alerta.temperatura!!, 0.0)
+        assertEquals(61.0, alerta.humedad!!, 0.0)
+    }
+
+    @Test fun laAlertaReevaluadaGuardaLaMedicionQueLaGenero() = runBlocking {
+        val umbrales = UmbralesRepository(crearAlmacenUmbrales(File(carpeta.root, "umbrales.preferences_pb"), nuevoAlcance()))
+        val api = ApiControlada(ahora).apply { mediciones = mapOf(1 to listOf(MedicionDto(1, 24.0, 60.0, ahora))) }
+        val repo = GalponRepository(abrirAlmacen(), api, umbrales.umbrales, reloj = { ahora })
+        repo.refrescar()   // normal: sin alerta
+
+        umbrales.guardar(ConfigUmbrales(tempAdvertenciaMax = 20.0))   // 24 °C pasa a crítico
+        val alerta = repo.reevaluar().single()
+
+        assertEquals(24.0, alerta.temperatura!!, 0.0)
+        assertEquals(60.0, alerta.humedad!!, 0.0)
     }
 
     @Test fun nuevosUmbralesReevaluanSinConexion() = runBlocking {
@@ -233,7 +273,7 @@ class GalponRepositoryTest {
         val nuevas = repo.reevaluar()
 
         assertEquals(llamadasAntes, api.llamadas)   // no API call
-        val critica = AlertaEntity(2, 1, "TEMPERATURA_ALTA", NivelAlerta.CRITICO, true, ahora)
+        val critica = AlertaEntity(2, 1, "TEMPERATURA_ALTA", NivelAlerta.CRITICO, true, ahora, temperatura = 30.0, humedad = 60.0)
         assertEquals(listOf(critica), nuevas)
         assertEquals(EstadoGalpon.CRITICO, repo.galpones.first().single().estado)
         assertEquals(listOf(critica), repo.alertasActivas.first())
@@ -296,7 +336,7 @@ class GalponRepositoryTest {
         val nuevas = repo.registrarMedicionSimulada(1, 35.0, 60.0)
 
         assertEquals(llamadasAntes, api.llamadas)   // no API call
-        val critica = AlertaEntity(1, 1, "TEMPERATURA_ALTA", NivelAlerta.CRITICO, true, ahora)
+        val critica = AlertaEntity(1, 1, "TEMPERATURA_ALTA", NivelAlerta.CRITICO, true, ahora, temperatura = 35.0, humedad = 60.0)
         assertEquals(listOf(critica), nuevas)
         assertEquals(MedicionEntity(2, 1, 35.0, 60.0, ahora), repo.mediciones(1).first().first())
         assertEquals(EstadoGalpon.CRITICO, repo.galpones.first().single().estado)
@@ -351,13 +391,25 @@ class GalponRepositoryTest {
         assertEquals("OPERARIO", alerta.confirmadaPor)
         assertEquals(ahora + 7, alerta.confirmadaEn)
         assertTrue(alerta.activa)
-        assertEquals(listOf(EventoEntity(1, 1, "Alerta confirmada", ACCION_CONFIRMAR, ahora + 7)), repo.eventos.first())
+        assertEquals(listOf(EventoEntity(1, 1, "Alerta confirmada", ACCION_CONFIRMAR, ahora + 7, "OPERARIO")), repo.eventos.first())
+    }
+
+    @Test fun registrarAccionGuardaElUsuarioDeLaSesion() = runBlocking {
+        val repo = GalponRepository(abrirAlmacen(), ApiControlada(ahora), reloj = { ahora })
+        repo.refrescar()
+
+        repo.registrarAccion(1, "VENTILACION", "Ventiladores al máximo", "SUPERVISOR")
+
+        assertEquals(
+            listOf(EventoEntity(1, 1, "Ventiladores al máximo", "VENTILACION", ahora, "SUPERVISOR")),
+            repo.eventos.first()
+        )
     }
 
     @Test fun losDatosSobrevivenAlReiniciarLaApp() = runBlocking {
         val repo = GalponRepository(abrirAlmacen(), ApiControlada(ahora), reloj = { ahora })
         repo.refrescar()
-        repo.registrarAccion(1, "VENTILACION", "Ventiladores al máximo")
+        repo.registrarAccion(1, "VENTILACION", "Ventiladores al máximo", "OPERARIO")
         cerrarAlmacenes()
 
         // New store and repository over the same file, without network
@@ -367,11 +419,11 @@ class GalponRepositoryTest {
         assertEquals(listOf(1), reabierto.galpones.first().map { it.id })
         assertEquals(listOf(33.5), reabierto.mediciones(1).first().map { it.temperatura })
         assertEquals(listOf(1), reabierto.alertasActivas.first().map { it.id })
-        assertEquals(listOf(EventoEntity(1, 1, "Ventiladores al máximo", "VENTILACION", ahora)), reabierto.eventos.first())
+        assertEquals(listOf(EventoEntity(1, 1, "Ventiladores al máximo", "VENTILACION", ahora, "OPERARIO")), reabierto.eventos.first())
         assertEquals(ResultadoSincronizacion.SinConexion, reabierto.refrescar())
 
         // Id counters persisted too: the next event does not reuse id 1
-        reabierto.registrarAccion(1, "OTRA", "Segunda")
+        reabierto.registrarAccion(1, "OTRA", "Segunda", "OPERARIO")
         assertEquals(listOf(2, 1), reabierto.eventos.first().map { it.id })
     }
 }

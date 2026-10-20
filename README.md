@@ -17,7 +17,7 @@ persistencia local (offline) y notificaciones.
 | F2 | Galpones con semáforo de estado y última temperatura/humedad | Todos |
 | F3 | Detalle del galpón con gráfico de temperatura y umbrales | Todos |
 | F4 | Alertas activas, notificación local de eventos críticos y confirmación | Todos (confirma operario/supervisor) |
-| F5 | Historial de alertas (activas/resueltas) y acciones, filtrable por galpón | Supervisor, Jefatura |
+| F5 | Historial de alertas (con medición, nivel y estado de atención) y acciones, filtrable por galpón, tipo de alerta y fecha | Supervisor, Jefatura |
 | F6 | Registro de acción con formulario validado y pantalla de confirmación | Operario |
 | F7 | Resumen: conteo por estado, alertas activas y alertas del día | Jefatura |
 | F8 | Funciona sin conexión: la UI siempre lee de DataStore; aviso "Sin conexión" con la hora de los datos y reconexión automática | Todos |
@@ -78,6 +78,12 @@ UI (Compose) → ViewModel (StateFlow) → RepositorioGalpones → { API (Retrof
 **Alertas:** *confirmar* significa acusar recibo (queda quién y cuándo, y una
 entrada en el historial). La alerta sigue activa hasta que el galpón vuelve a la
 normalidad; si empeora (advertencia → crítico) se genera una alerta nueva.
+
+**Historial:** cada alerta guarda la medición que la produjo (temperatura y humedad)
+y su estado de atención (*Pendiente*, *Atendida* con quién y cuándo, o *Resuelta*).
+Se filtra por galpón, tipo de alerta y rango de fecha (*Hoy*, *Últimos 7 días*, *Todo*).
+Cada acción registra el rol de quien la hizo, el galpón, la fecha y la hora; supervisor
+y jefatura consultan las acciones de los operarios (respuestas 6, 12 y 14 del docente).
 
 ## Cómo ejecutar
 

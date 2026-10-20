@@ -207,7 +207,10 @@ class GalponRepository(
             if (!sinCambios) {
                 if (actual != null) alertas[indiceActual] = actual.copy(activa = false)
                 if (nivel != null && tipo != null) {
-                    val nueva = AlertaEntity(siguienteIdAlerta++, g.id, tipo, nivel, true, m.fechaHora)
+                    val nueva = AlertaEntity(
+                        siguienteIdAlerta++, g.id, tipo, nivel, true, m.fechaHora,
+                        temperatura = m.temperatura, humedad = m.humedad
+                    )
                     alertas += nueva
                     if (nivel == NivelAlerta.CRITICO) nuevasCriticas += nueva
                 }
@@ -239,17 +242,17 @@ class GalponRepository(
             val ahora = reloj()
             d.copy(
                 alertas = d.alertas.map { if (it.id == alertaId) it.copy(confirmadaPor = rol.name, confirmadaEn = ahora) else it },
-                eventos = d.eventos + EventoEntity(d.siguienteIdEvento, galponId, detalle, ACCION_CONFIRMAR, ahora),
+                eventos = d.eventos + EventoEntity(d.siguienteIdEvento, galponId, detalle, ACCION_CONFIRMAR, ahora, rol.name),
                 siguienteIdEvento = d.siguienteIdEvento + 1
             )
         }
     }
 
     /** Local: el operario puede registrar acciones aunque esté sin conexión dentro del galpón. */
-    override suspend fun registrarAccion(galponId: Int, tipoAccion: String, descripcion: String) {
+    override suspend fun registrarAccion(galponId: Int, tipoAccion: String, descripcion: String, usuario: String?) {
         store.updateData { d ->
             d.copy(
-                eventos = d.eventos + EventoEntity(d.siguienteIdEvento, galponId, descripcion, tipoAccion, reloj()),
+                eventos = d.eventos + EventoEntity(d.siguienteIdEvento, galponId, descripcion, tipoAccion, reloj(), usuario),
                 siguienteIdEvento = d.siguienteIdEvento + 1
             )
         }

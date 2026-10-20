@@ -85,15 +85,15 @@ Se recomienda permitir a las jefaturas consultar alertas, mediciones y acciones 
 |---|-----------|--------|
 | 1 | Umbrales ficticios guardados en DataStore (`umbrales`) y editables desde un formulario validado: menú ⋮ → Configurar umbrales (supervisor y jefatura); el dispositivo evalúa estados y alertas con ellos | Hecho |
 | 2 | Advertencia: recomendación de revisar ventilación. Crítico: alerta prioritaria (canal de importancia alta, primeras en Alertas), notificación y botón *Registrar acción correctiva* para el operario. Dónde: `accionRecomendadaRes()` en `ui/screen/Formato.kt`, `AccionRecomendada` en `Componentes.kt`, detalle del galpón y tarjetas de Alertas | Hecho |
-| 3 | °C y % con fecha y hora de medición; semáforo de colores con texto | Pendiente |
+| 3 | °C y % con fecha y hora de medición; semáforo de colores con texto. Dónde: `textoMedicion()` en `ui/screen/Formato.kt`; tarjetas de Alertas e Historial | Hecho |
 | 4 | Notificaciones solo para operario y supervisor; jefatura consulta el panel (resumen de inicio y pestaña Alertas). Dónde: `debeNotificar()` en `notifications/NotificationHelper.kt`, aplicado en `ContenedorApp.notificarCritico` (también en segundo plano) | Hecho |
 | 5 | Simulación de temperatura y humedad desde la app: menú ⋮ → Simular medición (todos los perfiles). La lectura ficticia se guarda en DataStore y se evalúa con los umbrales, también sin conexión. Dónde: `ui/screen/SimulacionScreen.kt`, `viewmodel/SimulacionViewModel.kt`, `GalponRepository.registrarMedicionSimulada` | Hecho |
-| 6 | Historial con medición, nivel y estado de atención; filtros por fecha, galpón y tipo | Pendiente |
+| 6 | Historial con galpón, fecha, hora, medición registrada, nivel y estado de atención; filtros por galpón, tipo de alerta y rango (hoy / últimos 7 días / todo). Dónde: `HistorialScreen`, `viewmodel/FiltroHistorial.kt`, `HistorialViewModel`; `AlertaEntity` guarda la medición que produjo la alerta | Hecho |
 | 7 | Supuesto: solo pollos de engorda; fundos y galpones ficticios fijos, sin sectores | Supuesto |
 | 8 | Contacto ficticio del supervisor responsable visible en el detalle y en la alerta | Pendiente |
 | 9 | Fuera del alcance del MVP | No aplica |
 | 10 | Mediciones simuladas cada 1 minuto | Pendiente |
 | 11 | Gráficos de temperatura y humedad por período; sin exportación | Pendiente |
-| 12 | Cada acción guarda usuario, galpón, fecha, hora y acción; visible para supervisor y jefatura | Pendiente |
+| 12 | Cada acción guarda usuario (rol de la sesión), galpón, fecha, hora y acción; supervisor y jefatura la ven en la pestaña Acciones del Historial. Dónde: `EventoEntity.usuario`, `RepositorioGalpones.registrarAccion`, `RegistroAccionViewModel` | Hecho |
 | 13 | Asignación ficticia de supervisor a galpones (ligada a la respuesta 8) | Pendiente |
-| 14 | Jefatura consulta alertas, mediciones y acciones; todos los datos son ficticios | Parcial |
+| 14 | Jefatura consulta alertas, mediciones y acciones en Alertas e Historial; el usuario es el rol del login y todos los registros son ficticios. Dónde: `HistorialScreen`, `HistorialViewModel` | Hecho |

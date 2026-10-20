@@ -20,7 +20,7 @@ El caso exige demostrar **navegación, gestión de estado, persistencia local, c
 | F2 | Galpones con semáforo de estado y última temperatura/humedad | Todos | Hecho |
 | F3 | Detalle del galpón con gráfico de temperatura y umbrales | Todos | Hecho |
 | F4 | Alertas activas, notificación local de eventos críticos y confirmación | Todos | Hecho |
-| F5 | Historial de alertas y acciones, filtrable por galpón | Supervisor, Jefatura | Hecho |
+| F5 | Historial de alertas (medición, nivel y estado de atención) y acciones con usuario, filtrable por galpón, tipo y fecha | Supervisor, Jefatura | Hecho |
 | F6 | Registro de acción con formulario validado y confirmación (ViewModel compartido) | Operario | Hecho |
 | F7 | Resumen: conteo por estado, alertas activas y del día | Jefatura | Hecho |
 | F8 | Sin conexión: la UI lee siempre de DataStore; aviso con la hora de los datos | Todos | Hecho |
@@ -28,6 +28,8 @@ El caso exige demostrar **navegación, gestión de estado, persistencia local, c
 | F10 | Consumo de la API con Retrofit (JSON) desde json-server; deslizar para actualizar | Todos | Hecho |
 | F11 | Acción recomendada según el estado (detalle y alertas); notificaciones solo para operario y supervisor (`debeNotificar`) | Todos | Hecho |
 | F12 | Simular medición: formulario validado; lectura ficticia guardada en DataStore y evaluada en el teléfono, sin red (`SimulacionScreen`, `registrarMedicionSimulada`) | Todos | Hecho |
+
+**Historial y trazabilidad (respuestas 6, 12 y 14):** cada alerta guarda la medición que la produjo y su estado de atención; cada acción guarda el rol del usuario, el galpón, la fecha y la hora. El historial filtra por galpón, tipo de alerta y rango (hoy / últimos 7 días / todo), y supervisor y jefatura ven las acciones de los operarios.
 
 ## 3. Trazabilidad: guías → funcionalidades → requisitos del caso
 

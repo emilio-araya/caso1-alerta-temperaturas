@@ -18,7 +18,7 @@ import kotlinx.coroutines.flow.emptyFlow
  */
 class RepositorioFalso(galponesIniciales: List<GalponEntity> = emptyList()) : RepositorioGalpones {
 
-    data class AccionGuardada(val galponId: Int, val tipo: String, val descripcion: String)
+    data class AccionGuardada(val galponId: Int, val tipo: String, val descripcion: String, val usuario: String?)
 
     val accionesGuardadas = mutableListOf<AccionGuardada>()
 
@@ -38,9 +38,9 @@ class RepositorioFalso(galponesIniciales: List<GalponEntity> = emptyList()) : Re
     var vecesReevaluado = 0
 
     override val galpones = MutableStateFlow(galponesIniciales)
-    override val alertasActivas: Flow<List<AlertaEntity>> = MutableStateFlow(emptyList())
-    override val alertas: Flow<List<AlertaEntity>> = MutableStateFlow(emptyList())
-    override val eventos: Flow<List<EventoEntity>> = MutableStateFlow(emptyList())
+    override val alertasActivas = MutableStateFlow<List<AlertaEntity>>(emptyList())
+    override val alertas = MutableStateFlow<List<AlertaEntity>>(emptyList())
+    override val eventos = MutableStateFlow<List<EventoEntity>>(emptyList())
     override val ultimasMediciones: Flow<List<MedicionEntity>> = MutableStateFlow(emptyList())
     override val estadoConexion = MutableStateFlow(EstadoConexion.SIN_DATOS)
 
@@ -67,7 +67,7 @@ class RepositorioFalso(galponesIniciales: List<GalponEntity> = emptyList()) : Re
 
     override suspend fun confirmarAlerta(alertaId: Int, galponId: Int, rol: Rol, detalle: String) = Unit
 
-    override suspend fun registrarAccion(galponId: Int, tipoAccion: String, descripcion: String) {
-        accionesGuardadas += AccionGuardada(galponId, tipoAccion, descripcion)
+    override suspend fun registrarAccion(galponId: Int, tipoAccion: String, descripcion: String, usuario: String?) {
+        accionesGuardadas += AccionGuardada(galponId, tipoAccion, descripcion, usuario)
     }
 }

@@ -2,8 +2,10 @@ package com.example.caso1
 
 import com.example.caso1.data.local.GalponEntity
 import com.example.caso1.data.model.EstadoGalpon
+import com.example.caso1.data.model.Rol
 import com.example.caso1.viewmodel.RegistroAccionViewModel
 import com.example.caso1.viewmodel.TipoAccion
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -23,9 +25,10 @@ class RegistroAccionViewModelTest {
     )
     private val repo = RepositorioFalso(galpones)
     private val horaFija = 1_700_000_000_000L
+    private val rol = MutableStateFlow<Rol?>(Rol.OPERARIO)
     // by lazy: JUnit inicializa los campos ANTES de aplicar la regla; si el ViewModel se creara
     // aquí mismo, viewModelScope pediría Dispatchers.Main cuando todavía no está reemplazado.
-    private val vm by lazy { RegistroAccionViewModel(repo, reloj = { horaFija }) }
+    private val vm by lazy { RegistroAccionViewModel(repo, rol, reloj = { horaFija }) }
 
     @Test fun registrarConDatosValidosGuardaYLimpiaElFormulario() = runTest {
         vm.onGalponChange(4)
@@ -34,9 +37,9 @@ class RegistroAccionViewModelTest {
 
         vm.registrar()
 
-        // Se guardó una sola acción, con el código del tipo y la descripción sin espacios
+        // Se guardó una sola acción, con el código del tipo, la descripción sin espacios y el rol de la sesión
         assertEquals(
-            listOf(RepositorioFalso.AccionGuardada(4, "VENTILACION", "Encendí los ventiladores")),
+            listOf(RepositorioFalso.AccionGuardada(4, "VENTILACION", "Encendí los ventiladores", "OPERARIO")),
             repo.accionesGuardadas
         )
         val estado = vm.state.value
@@ -93,5 +96,16 @@ class RegistroAccionViewModelTest {
         vm.registrar()   // sin galpón: queda el error
         vm.preseleccionar(4)
         assertNull(vm.state.value.errores.galpon)
+    }
+
+    @Test fun sinSesionLaAccionSeGuardaSinUsuario() = runTest {
+        rol.value = null
+        vm.onGalponChange(4)
+        vm.onTipoChange(TipoAccion.VENTILACION)
+        vm.onDescripcionChange("Encendí los ventiladores")
+
+        vm.registrar()
+
+        assertNull(repo.accionesGuardadas.single().usuario)
     }
 }
