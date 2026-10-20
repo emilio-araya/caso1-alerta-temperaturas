@@ -278,10 +278,12 @@ class GalponRepository(
     }
 
     /** Local: el operario puede registrar acciones aunque esté sin conexión dentro del galpón. */
-    override suspend fun registrarAccion(galponId: Int, tipoAccion: String, descripcion: String, usuario: String?) {
+    override suspend fun registrarAccion(galponId: Int, tipoAccion: String, descripcion: String, usuario: String?, fotoRuta: String?) {
         store.updateData { d ->
             d.copy(
-                eventos = d.eventos + EventoEntity(d.siguienteIdEvento, galponId, descripcion, tipoAccion, reloj(), usuario),
+                eventos = d.eventos + EventoEntity(
+                    d.siguienteIdEvento, galponId, descripcion, tipoAccion, reloj(), usuario, fotoRuta
+                ),
                 siguienteIdEvento = d.siguienteIdEvento + 1
             )
         }

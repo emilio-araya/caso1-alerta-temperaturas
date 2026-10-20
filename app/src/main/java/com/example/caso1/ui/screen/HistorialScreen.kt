@@ -183,6 +183,8 @@ private fun TarjetaEvento(evento: EventoEntity, galpon: String) {
                 Text(accionLegible(codigo), style = MaterialTheme.typography.titleSmall)
                 // Las filas antiguas llevaban el tipo como prefijo "[Ventilación] …"
                 Text(evento.descripcion.removePrefix("[$codigo] "), style = MaterialTheme.typography.bodyMedium)
+                // Foto de evidencia tomada con la cámara (opcional)
+                evento.fotoRuta?.let { MiniaturaFoto(it, lado = 120.dp, modifier = Modifier.padding(top = 8.dp)) }
                 // Quién, dónde y cuándo (respuesta 12); los eventos antiguos no tienen usuario
                 Text(
                     stringResource(

@@ -57,5 +57,5 @@ interface RepositorioGalpones {
 
     suspend fun confirmarAlerta(alertaId: Int, galponId: Int, rol: Rol, detalle: String)
 
-    suspend fun registrarAccion(galponId: Int, tipoAccion: String, descripcion: String, usuario: String?)
+    suspend fun registrarAccion(galponId: Int, tipoAccion: String, descripcion: String, usuario: String?, fotoRuta: String? = null)
 }

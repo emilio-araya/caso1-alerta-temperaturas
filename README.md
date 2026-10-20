@@ -26,6 +26,8 @@ persistencia local (offline) y notificaciones.
 | F11 | Qué hacer según el estado en el detalle y en cada alerta (advertencia: revisar ventilación; crítico: alerta prioritaria y botón *Registrar acción correctiva*). Las notificaciones llegan solo a operario y supervisor; la jefatura consulta el panel | Todos (registra el operario) |
 | F12 | Simular medición: formulario validado (galpón, °C y %) con vista previa del estado; la lectura ficticia se guarda en DataStore y se evalúa en el teléfono, también sin conexión | Todos |
 | F13 | Mediciones automáticas cada 1 minuto mientras la app está abierta y gráficos de temperatura y humedad por período (6 h / 24 h / todo) | Todos |
+| F14 | Foto de evidencia opcional al registrar una acción: cámara del sistema (`TakePicture` + `FileProvider`), permiso `CAMERA` en tiempo de ejecución, miniatura en el formulario y en el historial; la ruta se guarda en DataStore. Sin CameraX ni dependencias nuevas | Operario |
+| F15 | Contacto ficticio del supervisor responsable en el detalle del galpón y en cada alerta (solo texto: sin llamadas ni permiso `CALL_PHONE`) | Todos |
 
 **Umbrales** (valores predeterminados de `ConfigUmbrales` en `data/model/Modelos.kt`). Son ficticios y configurables (respuesta 1 del docente): supervisor y jefatura los editan en el menú ⋮ → *Configurar umbrales* (formulario validado), se guardan en DataStore (`umbrales`) y el dispositivo evalúa con ellos el estado y las alertas de cada galpón a partir de su última medición. Los umbrales de `mock-api` solo simulan el servidor.
 
@@ -69,6 +71,10 @@ UI (Compose) → ViewModel (StateFlow) → RepositorioGalpones → { API (Retrof
   guarda galpones, mediciones (últimas 24 h), alertas y eventos. Cada sincronización se escribe en
   un solo `updateData`, atómico: o se guarda todo o nada. La sesión usa Preferences DataStore
   (`sesion`, Guía 12). Room se quitó porque la rúbrica del curso evalúa DataStore.
+- `data/local/Evidencias.kt` — foto de evidencia: crea el archivo en `files/evidencias/` y arma la
+  URI de `FileProvider` que recibe la app de cámara del sistema. Sin CameraX ni dependencias nuevas.
+- `data/model/Supervisores.kt` — contactos ficticios de supervisores asignados por galpón
+  (respuesta 8 del docente); solo texto, sin llamadas ni permiso de teléfono.
 - `data/repository/GalponRepository.kt` — sincroniza la API con DataStore; una alerta
   activa por galpón, sin duplicados; confirmación de alertas.
 - `AlertaTemperaturasApp.kt` — inyección de dependencias manual: `ContenedorApp`
@@ -92,6 +98,7 @@ y su estado de atención (*Pendiente*, *Atendida* con quién y cuándo, o *Resue
 Se filtra por galpón, tipo de alerta y rango de fecha (*Hoy*, *Últimos 7 días*, *Todo*).
 Cada acción registra el rol de quien la hizo, el galpón, la fecha y la hora; supervisor
 y jefatura consultan las acciones de los operarios (respuestas 6, 12 y 14 del docente).
+Si la acción se registró con foto de evidencia, el historial muestra la miniatura.
 
 ## Cómo ejecutar
 
@@ -103,11 +110,13 @@ y jefatura consultan las acciones de los operarios (respuestas 6, 12 y 14 del do
 2. Abrir el proyecto en Android Studio (Gradle descarga el JDK 25 configurado; minSdk 24, targetSdk 37).
 3. Ejecutar la configuración `app` en un emulador o dispositivo.
 4. Aceptar el permiso de notificaciones (Android 13+).
+5. Al tocar *Tomar foto* en el registro de una acción, aceptar el permiso de cámara.
+   Si se rechaza, la app lo explica y la acción se guarda igual (la foto es opcional).
 
 Sin el PC disponible, compilar con el servidor simulado interno:
 `./gradlew installDebug -Pcaso1.apiSimulada=true`.
 
-Tests unitarios (umbrales, coherencia del mock, validación del formulario, `RegistroAccionViewModel` con `runTest` y un repositorio falso, `GalponRepository` sobre un archivo DataStore real: sin red, error 500 o servidor apagado se siguen entregando los datos guardados; reglas de alertas, retención, mediciones automáticas y persistencia al reiniciar):
+Tests unitarios (umbrales, coherencia del mock, validación del formulario, `RegistroAccionViewModel` con `runTest` y un repositorio falso, `GalponRepository` sobre un archivo DataStore real: sin red, error 500 o servidor apagado se siguen entregando los datos guardados; reglas de alertas, retención, mediciones automáticas, foto de evidencia y persistencia al reiniciar; contactos ficticios de supervisores):
 
 ```bash
 ./gradlew testDebugUnitTest
@@ -128,7 +137,8 @@ Las opciones *Simular pico de calor* y *Simular sin conexión* del menú ⋮ sol
 2. A los 10 s llega la notificación → tocarla abre directo **Alertas** → **Confirmar**.
    La tarjeta dice qué hacer y ofrece *Registrar acción correctiva* con el galpón ya elegido.
    Con **Jefatura** no llegan notificaciones: las alertas se consultan en el panel.
-3. Botón **Registrar acción** (formulario validado: galpón, tipo y descripción) → confirmación.
+3. Botón **Registrar acción** (formulario validado: galpón, tipo y descripción; *Tomar foto* opcional
+   con la cámara del sistema) → confirmación. La miniatura queda en el formulario y en el historial.
    "Atrás" desde la confirmación vuelve a Galpones, sin poder guardar la acción dos veces.
 4. Menú ⋮ → *Cerrar sesión* → **Supervisor** → pestaña **Historial**: alerta confirmada y acciones.
 5. **Jefatura** → resumen por estado y alertas del día.

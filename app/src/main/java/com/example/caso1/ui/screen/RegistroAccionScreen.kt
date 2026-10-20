@@ -1,5 +1,9 @@
 package com.example.caso1.ui.screen
 
+import android.Manifest
+import android.content.pm.PackageManager
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.StringRes
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
@@ -9,14 +13,19 @@ import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.caso1.R
+import com.example.caso1.data.local.crearArchivoEvidencia
+import com.example.caso1.data.local.uriEvidencia
 import com.example.caso1.viewmodel.MIN_DESCRIPCION
 import com.example.caso1.viewmodel.RegistroAccionViewModel
 import com.example.caso1.viewmodel.TipoAccion
@@ -31,6 +40,29 @@ fun RegistroAccionScreen(
     val state by viewModel.state.collectAsStateWithLifecycle()
     val galpones by viewModel.galpones.collectAsStateWithLifecycle()
     val errores = state.errores
+    val context = LocalContext.current
+
+    // Ruta del archivo que la cámara del sistema va a escribir (TakePicture solo devuelve true/false)
+    // rememberSaveable: si el sistema recrea la actividad mientras la cámara está abierta,
+    // el resultado tiene que seguir sabiendo en qué archivo se escribió la foto.
+    var fotoPendiente by rememberSaveable { mutableStateOf<String?>(null) }
+
+    val capturarFoto = rememberLauncherForActivityResult(ActivityResultContracts.TakePicture()) { guardada ->
+        // Cancelar descarta la elección; el archivo creado queda vacío en files/evidencias/
+        viewModel.onFotoChange(if (guardada) fotoPendiente else null)
+        fotoPendiente = null
+    }
+
+    // Hay que crear el archivo antes de lanzar la cámara: la app de cámara escribe en esa URI
+    val tomarFoto = {
+        val archivo = crearArchivoEvidencia(context)
+        fotoPendiente = archivo.absolutePath
+        capturarFoto.launch(uriEvidencia(context, archivo))
+    }
+
+    val pedirPermisoCamara = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { concedido ->
+        if (concedido) tomarFoto() else viewModel.permisoCamaraDenegado()
+    }
 
     LaunchedEffect(state.registrado) {
         if (state.registrado) {
@@ -117,6 +149,46 @@ fun RegistroAccionScreen(
                 modifier = Modifier.fillMaxWidth(),
                 minLines = 3
             )
+
+            Spacer(Modifier.height(24.dp))
+            Seccion(stringResource(R.string.registro_foto_titulo), null)
+            Text(
+                stringResource(R.string.registro_foto_ayuda),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Spacer(Modifier.height(8.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                OutlinedButton(onClick = {
+                    // Permiso en tiempo de ejecución (rúbrica EP3): ya concedido o se pide ahora
+                    val concedido = ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) ==
+                        PackageManager.PERMISSION_GRANTED
+                    if (concedido) tomarFoto() else pedirPermisoCamara.launch(Manifest.permission.CAMERA)
+                }) {
+                    Text(stringResource(if (state.fotoRuta == null) R.string.registro_foto_tomar else R.string.registro_foto_repetir))
+                }
+                if (state.fotoRuta != null) {
+                    TextButton(onClick = { viewModel.onFotoChange(null) }) {
+                        Text(stringResource(R.string.registro_foto_quitar))
+                    }
+                }
+            }
+            state.fotoRuta?.let { ruta ->
+                Spacer(Modifier.height(8.dp))
+                MiniaturaFoto(ruta, lado = 160.dp)
+            }
+            state.mensajeFoto?.let { mensaje ->
+                Spacer(Modifier.height(8.dp))
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icono(R.drawable.ic_warning, null, Modifier.size(16.dp), MaterialTheme.colorScheme.onSurfaceVariant)
+                    Spacer(Modifier.width(4.dp))
+                    Text(
+                        stringResource(mensaje),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
 
             Spacer(Modifier.height(24.dp))
             Button(

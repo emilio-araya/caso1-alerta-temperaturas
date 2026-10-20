@@ -35,6 +35,7 @@ import kotlinx.coroutines.runBlocking
 import okhttp3.ResponseBody.Companion.toResponseBody
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
@@ -523,6 +524,8 @@ class GalponRepositoryTest {
         assertEquals(ahora + 7, alerta.confirmadaEn)
         assertTrue(alerta.activa)
         assertEquals(listOf(EventoEntity(1, 1, "Alerta confirmada", ACCION_CONFIRMAR, ahora + 7, "OPERARIO")), repo.eventos.first())
+        // Confirmar no es una acción con foto de evidencia
+        assertNull(repo.eventos.first().single().fotoRuta)
     }
 
     @Test fun registrarAccionGuardaElUsuarioDeLaSesion() = runBlocking {
@@ -535,6 +538,30 @@ class GalponRepositoryTest {
             listOf(EventoEntity(1, 1, "Ventiladores al máximo", "VENTILACION", ahora, "SUPERVISOR")),
             repo.eventos.first()
         )
+    }
+
+    // Recurso nativo: cámara (rúbrica EP3). La ruta de la foto se guarda con la acción.
+
+    @Test fun registrarAccionGuardaLaRutaDeLaFotoDeEvidencia() = runBlocking {
+        val repo = GalponRepository(abrirAlmacen(), ApiControlada(ahora), reloj = { ahora })
+        repo.refrescar()
+        val ruta = "/data/user/0/com.example.caso1/files/evidencias/accion-1.jpg"
+
+        repo.registrarAccion(1, "VENTILACION", "Ventiladores al máximo", "OPERARIO", ruta)
+
+        assertEquals(
+            listOf(EventoEntity(1, 1, "Ventiladores al máximo", "VENTILACION", ahora, "OPERARIO", ruta)),
+            repo.eventos.first()
+        )
+    }
+
+    @Test fun registrarAccionSinFotoDejaLaRutaEnNull() = runBlocking {
+        val repo = GalponRepository(abrirAlmacen(), ApiControlada(ahora), reloj = { ahora })
+        repo.refrescar()
+
+        repo.registrarAccion(1, "VENTILACION", "Ventiladores al máximo", "OPERARIO")
+
+        assertNull(repo.eventos.first().single().fotoRuta)
     }
 
     @Test fun losDatosSobrevivenAlReiniciarLaApp() = runBlocking {

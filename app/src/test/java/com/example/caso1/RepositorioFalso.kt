@@ -17,7 +17,13 @@ import kotlinx.coroutines.flow.MutableStateFlow
  */
 class RepositorioFalso(galponesIniciales: List<GalponEntity> = emptyList()) : RepositorioGalpones {
 
-    data class AccionGuardada(val galponId: Int, val tipo: String, val descripcion: String, val usuario: String?)
+    data class AccionGuardada(
+        val galponId: Int,
+        val tipo: String,
+        val descripcion: String,
+        val usuario: String?,
+        val fotoRuta: String? = null
+    )
 
     val accionesGuardadas = mutableListOf<AccionGuardada>()
 
@@ -79,7 +85,7 @@ class RepositorioFalso(galponesIniciales: List<GalponEntity> = emptyList()) : Re
 
     override suspend fun confirmarAlerta(alertaId: Int, galponId: Int, rol: Rol, detalle: String) = Unit
 
-    override suspend fun registrarAccion(galponId: Int, tipoAccion: String, descripcion: String, usuario: String?) {
-        accionesGuardadas += AccionGuardada(galponId, tipoAccion, descripcion, usuario)
+    override suspend fun registrarAccion(galponId: Int, tipoAccion: String, descripcion: String, usuario: String?, fotoRuta: String?) {
+        accionesGuardadas += AccionGuardada(galponId, tipoAccion, descripcion, usuario, fotoRuta)
     }
 }

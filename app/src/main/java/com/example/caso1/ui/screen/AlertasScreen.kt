@@ -16,6 +16,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.caso1.R
 import com.example.caso1.data.model.EstadoGalpon
+import com.example.caso1.data.model.Supervisores
 import com.example.caso1.viewmodel.AlertaUi
 import com.example.caso1.viewmodel.AlertasViewModel
 
@@ -132,6 +133,13 @@ private fun TarjetaAlerta(
             Text(
                 nombreGalpon(alerta.granja, alerta.galpon, alerta.galponId),
                 style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            // Contacto ficticio del supervisor responsable (respuesta 8); solo texto, sin llamadas
+            val supervisor = Supervisores.de(alerta.galponId)
+            Text(
+                stringResource(R.string.supervisor_linea, supervisor.nombre, supervisor.telefono),
+                style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             // Medición que produjo la alerta (respuesta 6); las alertas antiguas no la tienen

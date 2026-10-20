@@ -54,5 +54,7 @@ data class EventoEntity(
     val accionRegistrada: String?,
     val fechaHora: Long,
     // Rol de quien registró la acción ("OPERARIO"). Null en eventos guardados antes de este campo.
-    val usuario: String? = null
+    val usuario: String? = null,
+    // Ruta de la foto de evidencia (cámara). Null si no se adjuntó o en eventos antiguos.
+    val fotoRuta: String? = null
 )

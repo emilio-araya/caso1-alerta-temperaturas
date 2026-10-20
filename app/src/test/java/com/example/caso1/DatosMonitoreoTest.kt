@@ -36,6 +36,7 @@ class DatosMonitoreoTest {
         assertNull(alerta.temperatura)
         assertNull(alerta.humedad)
         assertNull(datos.eventos.single().usuario)
+        assertNull(datos.eventos.single().fotoRuta)
         assertEquals("TEMPERATURA_ALTA", alerta.tipo)
     }
 }

@@ -29,8 +29,10 @@ El caso exige demostrar **navegación, gestión de estado, persistencia local, c
 | F11 | Acción recomendada según el estado (detalle y alertas); notificaciones solo para operario y supervisor (`debeNotificar`) | Todos | Hecho |
 | F12 | Simular medición: formulario validado; lectura ficticia guardada en DataStore y evaluada en el teléfono, sin red (`SimulacionScreen`, `registrarMedicionSimulada`) | Todos | Hecho |
 | F13 | Mediciones automáticas cada minuto mientras la app está abierta y gráficos de temperatura y humedad por período (`SimuladorAutomatico`, `PeriodoGrafico`) | Todos | Hecho |
+| F14 | Foto de evidencia opcional con la cámara del sistema al registrar una acción (permiso `CAMERA` en tiempo de ejecución, `FileProvider`, miniatura en formulario e historial, ruta en DataStore) | Operario | Hecho |
+| F15 | Contacto ficticio del supervisor responsable en el detalle del galpón y en cada alerta (solo texto, sin llamadas) | Todos | Hecho |
 
-**Historial y trazabilidad (respuestas 6, 12 y 14):** cada alerta guarda la medición que la produjo y su estado de atención; cada acción guarda el rol del usuario, el galpón, la fecha y la hora. El historial filtra por galpón, tipo de alerta y rango (hoy / últimos 7 días / todo), y supervisor y jefatura ven las acciones de los operarios.
+**Historial y trazabilidad (respuestas 6, 12 y 14):** cada alerta guarda la medición que la produjo y su estado de atención; cada acción guarda el rol del usuario, el galpón, la fecha y la hora, y la foto de evidencia si se adjuntó. El historial filtra por galpón, tipo de alerta y rango (hoy / últimos 7 días / todo), y supervisor y jefatura ven las acciones de los operarios.
 
 ## 3. Trazabilidad: guías → funcionalidades → requisitos del caso
 
@@ -118,6 +120,8 @@ Se evalúan por separado temperatura y humedad; **el estado del galpón es el pe
 - **Mediciones automáticas (respuesta 10):** con la sesión iniciada, `SimuladorAutomatico` agrega cada minuto una lectura ficticia por galpón (temperatura, humedad, galpón, fecha y hora) y el repositorio la evalúa con los umbrales; funciona sin red. Los valores los genera `valoresSimulados()` de forma determinista. WorkManager no puede despertar cada minuto (mínimo 15), por eso el ciclo corre mientras el proceso de la app está abierto.
 - **Gráficos (respuesta 11):** el detalle muestra dos gráficos (temperatura y humedad) con el período *6 h*, *24 h* o *Todo*, los umbrales sombreados y la última lectura marcada.
 - Menú ⋮ → *Simular pico de calor* y *Simular sin conexión*: **solo en builds debug**. El pico se pide al servidor (`POST simulaciones/pico-calor`) y el worker lo detecta a los 10 s.
+- **Foto de evidencia (rúbrica EP3, recurso nativo cámara):** en el registro de una acción, *Tomar foto* pide el permiso `CAMERA` en tiempo de ejecución si hace falta y abre la app de cámara del sistema con `ActivityResultContracts.TakePicture`; la foto se escribe en `files/evidencias/` y se comparte con `FileProvider` (`res/xml/file_paths.xml`). La ruta queda en `EventoEntity.fotoRuta` (DataStore) y la miniatura se muestra en el formulario y en el historial. Si se niega el permiso, el formulario explica que la foto es opcional y la acción se guarda igual. No se usa CameraX ni una dependencia nueva.
+- **Contacto del supervisor (respuesta 8):** `data/model/Supervisores.kt` asigna siempre el mismo supervisor ficticio a cada galpón. Se muestra en la tarjeta *Supervisor responsable* del detalle y en una línea de cada alerta. Solo texto: sin llamadas ni permiso `CALL_PHONE`.
 
 ## 7. Calidad
 
@@ -134,6 +138,7 @@ Las dependencias están en `gradle/libs.versions.toml`, sin versiones escritas a
 |--------|------------|
 | Conectividad intermitente | DataStore como fuente única, aviso con la hora de los datos y reconexión automática |
 | Permiso de notificaciones denegado | La alerta se ve igual dentro de la app, con contador en la barra |
+| Permiso de cámara denegado | La foto es opcional: se explica y la acción se guarda sin foto |
 | WorkManager tarda (≥ 15 min) | Simulación de pico de calor en builds debug |
 | json-server no disponible en la demo | Compilar con `-Pcaso1.apiSimulada=true` |
 | `adb reverse` se pierde al reconectar el dispositivo | Repetir `npm run android` en `mock-api/` |

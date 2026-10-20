@@ -60,10 +60,14 @@ data class RegistroAccionState(
     val galponId: Int? = null,
     val tipoAccion: TipoAccion? = null,
     val descripcion: String = "",
+    // Ruta de la foto de evidencia (opcional); null si no se adjuntó
+    val fotoRuta: String? = null,
     val errores: ErroresRegistro = ErroresRegistro(),
     val guardando: Boolean = false,
     val registrado: Boolean = false,
-    val ultimoRegistro: AccionRegistrada? = null
+    val ultimoRegistro: AccionRegistrada? = null,
+    // Explicación cuando se deniega el permiso de cámara (id de strings.xml)
+    @param:StringRes val mensajeFoto: Int? = null
 )
 
 class RegistroAccionViewModel(
@@ -88,6 +92,19 @@ class RegistroAccionViewModel(
 
     fun onDescripcionChange(v: String) {
         _state.value = _state.value.copy(descripcion = v, errores = _state.value.errores.copy(descripcion = null))
+    }
+
+    /** Foto elegida (o null si se quitó o se canceló la cámara); limpia el aviso de permiso. */
+    fun onFotoChange(ruta: String?) {
+        _state.value = _state.value.copy(fotoRuta = ruta, mensajeFoto = null)
+    }
+
+    /**
+     * La cámara es opcional: si se niega el permiso se explica y el formulario sigue
+     * funcionando. El guardado no depende de la foto (rúbrica EP3).
+     */
+    fun permisoCamaraDenegado() {
+        _state.value = _state.value.copy(mensajeFoto = R.string.registro_foto_permiso_denegado)
     }
 
     /**
@@ -115,8 +132,9 @@ class RegistroAccionViewModel(
             }
             val descripcion = s.descripcion.trim()
             // Queda guardado quién hizo la acción (respuesta 12); sin sesión, sin usuario
-            repo.registrarAccion(galpon.id, tipo.name, descripcion, rol.first()?.name)
-            // El formulario queda limpio: volver atrás no permite guardar la misma acción otra vez
+            repo.registrarAccion(galpon.id, tipo.name, descripcion, rol.first()?.name, s.fotoRuta)
+            // El formulario queda limpio: volver atrás no permite guardar la misma acción otra vez.
+            // La foto queda en files/evidencias/ (no se borra: es evidencia de la acción).
             _state.value = RegistroAccionState(
                 registrado = true,
                 ultimoRegistro = AccionRegistrada(galpon.granja, galpon.nombre, tipo, descripcion, reloj())

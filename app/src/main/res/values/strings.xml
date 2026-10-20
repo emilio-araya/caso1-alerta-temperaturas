@@ -181,6 +181,20 @@
     <string name="accion_tipo_notificacion">Notificación a supervisor</string>
     <string name="accion_tipo_otro">Otro</string>
 
+    <!-- Foto de evidencia (rúbrica EP3: cámara). Es opcional y no bloquea el guardado -->
+    <string name="registro_foto_titulo">Foto de evidencia (opcional)</string>
+    <string name="registro_foto_ayuda">Adjunta una foto del galpón como evidencia. Puedes registrar la acción sin foto.</string>
+    <string name="registro_foto_tomar">Tomar foto</string>
+    <string name="registro_foto_repetir">Repetir foto</string>
+    <string name="registro_foto_quitar">Quitar foto</string>
+    <string name="registro_foto_permiso_denegado">Sin permiso de cámara no se puede tomar la foto. Puedes guardar la acción igual: la foto es opcional.</string>
+    <string name="foto_evidencia_descripcion">Foto de evidencia de la acción</string>
+
+    <!-- Supervisor responsable (respuesta 8 del docente: contacto ficticio, sin llamadas) -->
+    <string name="supervisor_titulo">Supervisor responsable</string>
+    <string name="supervisor_nota_ficticio">Datos de contacto ficticios: la app no realiza llamadas.</string>
+    <string name="supervisor_linea">Supervisor: %1$s · %2$s</string>
+
     <!-- Confirmación -->
     <string name="confirmacion_barra">Confirmación</string>
     <string name="confirmacion_titulo">Acción registrada</string>

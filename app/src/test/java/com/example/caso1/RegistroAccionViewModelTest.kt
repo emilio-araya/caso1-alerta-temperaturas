@@ -108,4 +108,46 @@ class RegistroAccionViewModelTest {
 
         assertNull(repo.accionesGuardadas.single().usuario)
     }
+
+    // Foto de evidencia (rúbrica EP3: cámara). Es opcional y nunca bloquea el guardado.
+
+    @Test fun laFotoElegidaSeGuardaConLaAccionYSeLimpiaAlRegistrar() = runTest {
+        vm.onGalponChange(4)
+        vm.onTipoChange(TipoAccion.VENTILACION)
+        vm.onDescripcionChange("Encendí los ventiladores")
+        vm.onFotoChange("/files/evidencias/accion-1.jpg")
+
+        vm.registrar()
+
+        assertEquals(
+            listOf(RepositorioFalso.AccionGuardada(4, "VENTILACION", "Encendí los ventiladores", "OPERARIO", "/files/evidencias/accion-1.jpg")),
+            repo.accionesGuardadas
+        )
+        // El formulario queda limpio para la próxima acción
+        assertNull(vm.state.value.fotoRuta)
+    }
+
+    @Test fun onFotoChangeLimpiaElAvisoDePermisoDenegado() = runTest {
+        vm.permisoCamaraDenegado()
+        assertNotNull(vm.state.value.mensajeFoto)
+
+        vm.onFotoChange("/files/evidencias/accion-2.jpg")
+
+        assertEquals("/files/evidencias/accion-2.jpg", vm.state.value.fotoRuta)
+        assertNull(vm.state.value.mensajeFoto)
+    }
+
+    @Test fun sinPermisoDeCamaraSeAvisaQueLaFotoEsOpcionalYLaAccionSePuedeGuardar() = runTest {
+        vm.permisoCamaraDenegado()
+
+        // El aviso explica que la foto es opcional; el formulario sigue funcionando sin foto
+        assertEquals(R.string.registro_foto_permiso_denegado, vm.state.value.mensajeFoto)
+        vm.onGalponChange(4)
+        vm.onTipoChange(TipoAccion.VENTILACION)
+        vm.onDescripcionChange("Encendí los ventiladores")
+        vm.registrar()
+
+        assertEquals(1, repo.accionesGuardadas.size)
+        assertNull(repo.accionesGuardadas.single().fotoRuta)
+    }
 }

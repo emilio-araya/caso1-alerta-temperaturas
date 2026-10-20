@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Rutas que FileProvider puede compartir con la app de cámara del sistema.
+     Solo files/evidencias/: las fotos de evidencia de las acciones correctivas. -->
+<paths>
+    <files-path
+        name="evidencias"
+        path="evidencias/" />
+</paths>

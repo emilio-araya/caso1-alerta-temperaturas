@@ -29,6 +29,7 @@ import com.example.caso1.R
 import com.example.caso1.data.local.MedicionEntity
 import com.example.caso1.data.model.ConfigUmbrales
 import com.example.caso1.data.model.EstadoGalpon
+import com.example.caso1.data.model.Supervisores
 import com.example.caso1.ui.theme.EstiloCifra
 import com.example.caso1.ui.theme.EstiloEstado
 import com.example.caso1.ui.theme.LocalPaletaEstados
@@ -75,6 +76,11 @@ fun DetalleContenido(
             item {
                 AccionRecomendada(estado, Modifier.padding(start = 16.dp, end = 16.dp, top = 16.dp), onRegistrarCorrectiva = onRegistrar)
             }
+        }
+
+        // A quién corresponde atender una alerta de este galpón (respuesta 8)
+        item {
+            TarjetaSupervisor(state.galponId, Modifier.padding(start = 16.dp, end = 16.dp, top = 16.dp))
         }
 
         item {
@@ -176,6 +182,37 @@ private fun PlacaEstado(ultima: MedicionEntity, state: DetalleUiState) {
                 Spacer(Modifier.weight(1f))
                 Text(stringResource(R.string.detalle_lectura_de, formatoHora(ultima.fechaHora)), style = MaterialTheme.typography.labelMedium)
             }
+        }
+    }
+}
+
+/**
+ * Supervisor responsable del galpón (respuesta 8 del docente). Datos ficticios, solo texto:
+ * la app no llama ni envía mensajes, así que no pide el permiso CALL_PHONE.
+ */
+@Composable
+private fun TarjetaSupervisor(galponId: Int, modifier: Modifier = Modifier) {
+    val contacto = Supervisores.de(galponId)
+    Card(
+        modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLowest),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+    ) {
+        Column(Modifier.padding(16.dp)) {
+            Text(stringResource(R.string.supervisor_titulo), style = MaterialTheme.typography.titleSmall)
+            Spacer(Modifier.height(4.dp))
+            Text(contacto.nombre, style = MaterialTheme.typography.bodyLarge)
+            Text(
+                contacto.telefono,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Spacer(Modifier.height(4.dp))
+            Text(
+                stringResource(R.string.supervisor_nota_ficticio),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
         }
     }
 }

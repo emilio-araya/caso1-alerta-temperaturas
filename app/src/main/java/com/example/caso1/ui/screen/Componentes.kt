@@ -1,5 +1,7 @@
 package com.example.caso1.ui.screen
 
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
 import androidx.compose.animation.AnimatedVisibility
@@ -8,18 +10,23 @@ import androidx.compose.animation.core.tween
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
@@ -27,6 +34,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.example.caso1.R
 import com.example.caso1.data.model.EstadoGalpon
@@ -36,10 +44,43 @@ import com.example.caso1.data.repository.EstadoConexion
 import com.example.caso1.ui.navigation.AppRoutes
 import com.example.caso1.viewmodel.EstadoRed
 import com.example.caso1.ui.theme.EstiloEstado
+import java.io.File
 
 @Composable
 fun Icono(@DrawableRes id: Int, descripcion: String?, modifier: Modifier = Modifier, tint: Color = LocalContentColor.current) {
     Icon(painterResource(id), descripcion, modifier, tint)
+}
+
+/** Lado máximo al que se reduce una foto de evidencia antes de dibujarla. */
+private const val OBJETIVO_MINIATURA = 480
+
+/**
+ * Miniatura de una foto de evidencia (cámara), para el formulario y el historial.
+ * Decodifica el JPEG reducido con `inSampleSize` para no cargar la foto completa en memoria;
+ * si el archivo ya no existe, no dibuja nada.
+ */
+@Composable
+internal fun MiniaturaFoto(ruta: String, lado: Dp, modifier: Modifier = Modifier) {
+    val imagen = remember(ruta) { decodificarMiniatura(ruta) } ?: return
+    Image(
+        bitmap = imagen.asImageBitmap(),
+        contentDescription = stringResource(R.string.foto_evidencia_descripcion),
+        contentScale = ContentScale.Crop,
+        modifier = modifier.size(lado).clip(MaterialTheme.shapes.small)
+    )
+}
+
+/** Lee solo los límites del JPEG y luego lo decodifica con la reducción suficiente. */
+private fun decodificarMiniatura(ruta: String): Bitmap? {
+    if (!File(ruta).exists()) return null
+    val limites = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+    BitmapFactory.decodeFile(ruta, limites)
+    if (limites.outWidth <= 0 || limites.outHeight <= 0) return null
+    var muestra = 1
+    while (limites.outWidth / (muestra * 2) >= OBJETIVO_MINIATURA || limites.outHeight / (muestra * 2) >= OBJETIVO_MINIATURA) {
+        muestra *= 2
+    }
+    return BitmapFactory.decodeFile(ruta, BitmapFactory.Options().apply { inSampleSize = muestra })
 }
 
 /**
