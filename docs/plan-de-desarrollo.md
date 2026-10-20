@@ -28,6 +28,7 @@ El caso exige demostrar **navegación, gestión de estado, persistencia local, c
 | F10 | Consumo de la API con Retrofit (JSON) desde json-server; deslizar para actualizar | Todos | Hecho |
 | F11 | Acción recomendada según el estado (detalle y alertas); notificaciones solo para operario y supervisor (`debeNotificar`) | Todos | Hecho |
 | F12 | Simular medición: formulario validado; lectura ficticia guardada en DataStore y evaluada en el teléfono, sin red (`SimulacionScreen`, `registrarMedicionSimulada`) | Todos | Hecho |
+| F13 | Mediciones automáticas cada minuto mientras la app está abierta y gráficos de temperatura y humedad por período (`SimuladorAutomatico`, `PeriodoGrafico`) | Todos | Hecho |
 
 **Historial y trazabilidad (respuestas 6, 12 y 14):** cada alerta guarda la medición que la produjo y su estado de atención; cada acción guarda el rol del usuario, el galpón, la fecha y la hora. El historial filtra por galpón, tipo de alerta y rango (hoy / últimos 7 días / todo), y supervisor y jefatura ven las acciones de los operarios.
 
@@ -47,8 +48,8 @@ El caso exige demostrar **navegación, gestión de estado, persistencia local, c
 
 ```
 UI (Compose) → ViewModel (StateFlow) → RepositorioGalpones → { MonitorApi (Retrofit), DataStore }
-                                                ↑
-                         AlertasWorker (WorkManager, cada 15 min)
+                                                ↑                ↑
+                         AlertasWorker (WorkManager, cada 15 min)  SimuladorAutomatico (cada 1 min, app abierta)
 ```
 
 ```
@@ -114,13 +115,15 @@ Se evalúan por separado temperatura y humedad; **el estado del galpón es el pe
 
 - Canal de notificaciones creado al iniciar la app; permiso `POST_NOTIFICATIONS` pedido en Android 13+.
 - `AlertasWorker` periódico cada 15 min con restricción de red.
+- **Mediciones automáticas (respuesta 10):** con la sesión iniciada, `SimuladorAutomatico` agrega cada minuto una lectura ficticia por galpón (temperatura, humedad, galpón, fecha y hora) y el repositorio la evalúa con los umbrales; funciona sin red. Los valores los genera `valoresSimulados()` de forma determinista. WorkManager no puede despertar cada minuto (mínimo 15), por eso el ciclo corre mientras el proceso de la app está abierto.
+- **Gráficos (respuesta 11):** el detalle muestra dos gráficos (temperatura y humedad) con el período *6 h*, *24 h* o *Todo*, los umbrales sombreados y la última lectura marcada.
 - Menú ⋮ → *Simular pico de calor* y *Simular sin conexión*: **solo en builds debug**. El pico se pide al servidor (`POST simulaciones/pico-calor`) y el worker lo detecta a los 10 s.
 
 ## 7. Calidad
 
 | Tipo | Qué cubre | Cómo correrlo |
 |------|-----------|---------------|
-| Unitarios (JVM) | Umbrales y bordes, cliente HTTP y conectividad, API simulada interna, validación y ViewModel de F6, sincronizador, repositorio sobre DataStore (sin red, error 500 o servidor apagado → se siguen sirviendo los datos guardados; alertas, retención y persistencia) | `./gradlew testDebugUnitTest` (también en CI) |
+| Unitarios (JVM) | Umbrales y bordes, cliente HTTP y conectividad, API simulada interna, validación y ViewModel de F6, sincronizador, valores y período de los gráficos, repositorio sobre DataStore (sin red, error 500 o servidor apagado → se siguen sirviendo los datos guardados; alertas, retención, mediciones automáticas y persistencia) | `./gradlew testDebugUnitTest` (también en CI) |
 | API simulada | Endpoints, orden, 404, pico de calor y umbrales | `cd mock-api && npm test` |
 
 Las dependencias están en `gradle/libs.versions.toml`, sin versiones escritas a mano en `build.gradle.kts`.

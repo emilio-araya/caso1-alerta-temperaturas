@@ -25,6 +25,7 @@ persistencia local (offline) y notificaciones.
 | F9 | Diseño adaptable con Window Size Classes (1 columna / 2 columnas / lista + detalle; barra inferior o riel lateral) | Todos |
 | F11 | Qué hacer según el estado en el detalle y en cada alerta (advertencia: revisar ventilación; crítico: alerta prioritaria y botón *Registrar acción correctiva*). Las notificaciones llegan solo a operario y supervisor; la jefatura consulta el panel | Todos (registra el operario) |
 | F12 | Simular medición: formulario validado (galpón, °C y %) con vista previa del estado; la lectura ficticia se guarda en DataStore y se evalúa en el teléfono, también sin conexión | Todos |
+| F13 | Mediciones automáticas cada 1 minuto mientras la app está abierta y gráficos de temperatura y humedad por período (6 h / 24 h / todo) | Todos |
 
 **Umbrales** (valores predeterminados de `ConfigUmbrales` en `data/model/Modelos.kt`). Son ficticios y configurables (respuesta 1 del docente): supervisor y jefatura los editan en el menú ⋮ → *Configurar umbrales* (formulario validado), se guardan en DataStore (`umbrales`) y el dispositivo evalúa con ellos el estado y las alertas de cada galpón a partir de su última medición. Los umbrales de `mock-api` solo simulan el servidor.
 
@@ -55,6 +56,13 @@ UI (Compose) → ViewModel (StateFlow) → RepositorioGalpones → { API (Retrof
   mismo JSON dentro de la app. Se activa compilando con `-Pcaso1.apiSimulada=true`.
 - `data/MonitorConectividad.kt` y `data/Sincronizador.kt` — detectan la red del teléfono y
   sincronizan la API con DataStore (al abrir, al deslizar, al volver la conexión y cada 15 min).
+- `data/SimuladorAutomatico.kt` — respuesta 10 del docente: con la sesión iniciada, cada minuto
+  agrega una medición ficticia por galpón (temperatura y humedad) y la evalúa en el dispositivo.
+  Como WorkManager no puede despertar cada minuto, el ciclo vive mientras el proceso está abierto.
+  `data/model/SimulacionAmbiental.kt` genera los valores de forma determinista (misma entrada, misma
+  salida), así la demo es reproducible.
+- `viewmodel/PeriodoGrafico.kt` — respuesta 11: filtra las mediciones a 6 h, 24 h o todo; el detalle
+  grafica temperatura y humedad del período elegido.
 - `data/api/MockMonitorApi.kt` — datos del servidor simulado, deterministas: estado, alertas e
   historial siempre coinciden. Ciclo suave de 24 h con una medición cada 15 min.
 - `data/local/` — caché local en DataStore tipado: `monitoreo.json` (JSON con kotlinx.serialization)
@@ -99,7 +107,7 @@ y jefatura consultan las acciones de los operarios (respuestas 6, 12 y 14 del do
 Sin el PC disponible, compilar con el servidor simulado interno:
 `./gradlew installDebug -Pcaso1.apiSimulada=true`.
 
-Tests unitarios (umbrales, coherencia del mock, validación del formulario, `RegistroAccionViewModel` con `runTest` y un repositorio falso, y `GalponRepository` sobre un archivo DataStore real: sin red, error 500 o servidor apagado se siguen entregando los datos guardados; reglas de alertas, retención y persistencia al reiniciar):
+Tests unitarios (umbrales, coherencia del mock, validación del formulario, `RegistroAccionViewModel` con `runTest` y un repositorio falso, `GalponRepository` sobre un archivo DataStore real: sin red, error 500 o servidor apagado se siguen entregando los datos guardados; reglas de alertas, retención, mediciones automáticas y persistencia al reiniciar):
 
 ```bash
 ./gradlew testDebugUnitTest
@@ -113,6 +121,8 @@ Las opciones *Simular pico de calor* y *Simular sin conexión* del menú ⋮ sol
 0. **Simular medición** (respuesta 5 del docente): menú ⋮ → *Simular medición* → elegir galpón,
    escribir 35 °C y 60 % (la vista previa dice cómo quedaría) → *Simular medición*. El galpón pasa a
    alerta roja y llega la notificación (operario o supervisor). Funciona también sin conexión.
+   Con la sesión iniciada, además, cada minuto se agrega una lectura automática por galpón; en el
+   detalle se grafican temperatura y humedad con el período *6 h*, *24 h* o *Todo*.
 
 1. Entrar como **Operario** → menú ⋮ → *Simular pico de calor (demo)* → botón Inicio del teléfono.
 2. A los 10 s llega la notificación → tocarla abre directo **Alertas** → **Confirmar**.

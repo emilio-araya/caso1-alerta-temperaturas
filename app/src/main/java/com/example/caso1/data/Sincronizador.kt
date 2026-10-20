@@ -44,4 +44,9 @@ class Sincronizador(
     suspend fun simularMedicion(galponId: Int, temperatura: Double, humedad: Double): List<AlertaEntity> = mutex.withLock {
         repo.registrarMedicionSimulada(galponId, temperatura, humedad).also { lista -> lista.forEach { notificarCritico(it) } }
     }
+
+    /** Respuesta 10: una medición simulada por minuto y por galpón (sin red); notifica las críticas nuevas. */
+    suspend fun generarMedicionesAutomaticas(): List<AlertaEntity> = mutex.withLock {
+        repo.registrarMedicionesAutomaticas().also { lista -> lista.forEach { notificarCritico(it) } }
+    }
 }

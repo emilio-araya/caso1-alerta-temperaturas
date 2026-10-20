@@ -15,6 +15,7 @@ import com.example.caso1.data.model.EstadoGalpon
 import com.example.caso1.data.model.NivelAlerta
 import com.example.caso1.data.model.Rol
 import com.example.caso1.data.model.Umbrales
+import com.example.caso1.data.model.valoresSimulados
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
@@ -133,6 +134,34 @@ class GalponRepository(
                 siguienteIdMedicion = actual.siguienteIdMedicion + 1
             )
             evaluarGalpones(conMedicion, setOf(galponId), config)
+        }
+    }
+
+    /**
+     * Respuesta 10 del docente: una medición ficticia por minuto y por galpón. Parte de la última
+     * lectura guardada de cada galpón (sin lecturas no hay nada que continuar), se escribe en
+     * DataStore sin red y se evalúa con la misma regla que las lecturas reales.
+     */
+    override suspend fun registrarMedicionesAutomaticas(): List<AlertaEntity> {
+        val config = umbrales.first()
+        return actualizarYEvaluar { actual ->
+            val ahora = reloj()                 // una sola hora para todo el lote
+            val minuto = ahora / 60_000
+            var siguienteId = actual.siguienteIdMedicion
+            val nuevas = mutableListOf<MedicionEntity>()
+            actual.galpones.forEach { g ->
+                val ultima = actual.mediciones.filter { it.galponId == g.id }.maxByOrNull { it.fechaHora }
+                    ?: return@forEach
+                val (temperatura, humedad) = valoresSimulados(g.id, minuto, ultima.temperatura, ultima.humedad)
+                nuevas += MedicionEntity(siguienteId++, g.id, temperatura, humedad, ahora)
+            }
+            // También poda aquí: si solo se podara al sincronizar, el archivo crecería sin límite
+            // mientras la app está abierta generando una lectura por minuto.
+            val conMediciones = actual.copy(
+                mediciones = (actual.mediciones + nuevas).filter { it.fechaHora >= ahora - RETENCION_MEDICIONES_MS },
+                siguienteIdMedicion = siguienteId
+            )
+            evaluarGalpones(conMediciones, actual.galpones.map { it.id }.toSet(), config)
         }
     }
 
@@ -262,7 +291,7 @@ class GalponRepository(
 /** Código guardado en eventos.accionRegistrada; el texto visible está en strings.xml. */
 const val ACCION_CONFIRMAR = "CONFIRMACION_ALERTA"
 
-/** Las mediciones se guardan 24 h (96 lecturas por galpón, una cada 15 min). */
+/** Las mediciones se guardan 24 h; la simulación automática agrega una por minuto y galpón. */
 const val RETENCION_MEDICIONES_MS = 24 * 60 * 60_000L
 
 private const val TAG = "GalponRepository"

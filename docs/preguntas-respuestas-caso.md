@@ -92,8 +92,8 @@ Se recomienda permitir a las jefaturas consultar alertas, mediciones y acciones 
 | 7 | Supuesto: solo pollos de engorda; fundos y galpones ficticios fijos, sin sectores | Supuesto |
 | 8 | Contacto ficticio del supervisor responsable visible en el detalle y en la alerta | Pendiente |
 | 9 | Fuera del alcance del MVP | No aplica |
-| 10 | Mediciones simuladas cada 1 minuto | Pendiente |
-| 11 | Gráficos de temperatura y humedad por período; sin exportación | Pendiente |
+| 10 | Mediciones automáticas cada 1 minuto mientras la app está abierta: una por galpón, guardada en DataStore y evaluada en el dispositivo. Dónde: `valoresSimulados()` en `data/model/SimulacionAmbiental.kt`, `GalponRepository.registrarMedicionesAutomaticas`, `data/SimuladorAutomatico.kt` | Hecho |
+| 11 | Gráficos de temperatura y humedad en el detalle con período 6 h / 24 h / todo y los umbrales sombreados; sin exportación. Dónde: `viewmodel/PeriodoGrafico.kt`, `DetalleViewModel`, `DetalleGalponScreen` | Hecho |
 | 12 | Cada acción guarda usuario (rol de la sesión), galpón, fecha, hora y acción; supervisor y jefatura la ven en la pestaña Acciones del Historial. Dónde: `EventoEntity.usuario`, `RepositorioGalpones.registrarAccion`, `RegistroAccionViewModel` | Hecho |
 | 13 | Asignación ficticia de supervisor a galpones (ligada a la respuesta 8) | Pendiente |
 | 14 | Jefatura consulta alertas, mediciones y acciones en Alertas e Historial; el usuario es el rol del login y todos los registros son ficticios. Dónde: `HistorialScreen`, `HistorialViewModel` | Hecho |

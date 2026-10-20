@@ -20,8 +20,10 @@ data class DetalleUiState(
     val galponId: Int = 0,
     val galpon: GalponEntity? = null,
     val mediciones: List<MedicionEntity> = emptyList(),   // de la más reciente a la más antigua
+    val medicionesGrafico: List<MedicionEntity> = emptyList(),   // del período elegido, cronológicas
+    val periodo: PeriodoGrafico = PeriodoGrafico.SEIS_HORAS,
     val estado: EstadoGalpon? = null,
-    val umbrales: ConfigUmbrales = Umbrales.PREDETERMINADOS   // los configurados, para causa, colores y gráfico
+    val umbrales: ConfigUmbrales = Umbrales.PREDETERMINADOS   // los configurados, para causa, colores y gráficos
 ) {
     val ultima: MedicionEntity? get() = mediciones.firstOrNull()
 }
@@ -35,17 +37,22 @@ data class DetalleUiState(
 class DetalleViewModel(
     private val repo: RepositorioGalpones,
     private val savedState: SavedStateHandle,
-    private val umbrales: Flow<ConfigUmbrales> = flowOf(Umbrales.PREDETERMINADOS)
+    private val umbrales: Flow<ConfigUmbrales> = flowOf(Umbrales.PREDETERMINADOS),
+    private val reloj: () -> Long = System::currentTimeMillis
 ) : ViewModel() {
     private val galponId = savedState.getStateFlow(CLAVE_GALPON, 0)
+    private val periodo = MutableStateFlow(PeriodoGrafico.SEIS_HORAS)
 
     val uiState: StateFlow<DetalleUiState> = galponId
         .flatMapLatest { id ->
-            combine(repo.mediciones(id), repo.galpones, umbrales) { lista, galpones, config ->
+            combine(repo.mediciones(id), repo.galpones, umbrales, periodo) { lista, galpones, config, p ->
                 DetalleUiState(
                     galponId = id,
                     galpon = galpones.firstOrNull { it.id == id },
                     mediciones = lista,
+                    // Respuesta 11: el gráfico cubre el período elegido; la tabla sigue completa
+                    medicionesGrafico = filtrarPorPeriodo(lista, reloj(), p).asReversed(),
+                    periodo = p,
                     estado = lista.firstOrNull()?.let { config.evaluar(it.temperatura, it.humedad) },
                     umbrales = config
                 )
@@ -54,6 +61,8 @@ class DetalleViewModel(
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), DetalleUiState())
 
     fun seleccionar(id: Int) { savedState[CLAVE_GALPON] = id }
+
+    fun cambiarPeriodo(p: PeriodoGrafico) { periodo.value = p }
 
     companion object {
         private const val CLAVE_GALPON = "galponId"

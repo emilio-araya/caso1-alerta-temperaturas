@@ -6,6 +6,7 @@ import androidx.lifecycle.ViewModelProvider.AndroidViewModelFactory.Companion.AP
 import androidx.lifecycle.viewmodel.CreationExtras
 import com.example.caso1.data.MonitorConectividad
 import com.example.caso1.data.SessionManager
+import com.example.caso1.data.SimuladorAutomatico
 import com.example.caso1.data.Sincronizador
 import com.example.caso1.data.api.ClienteApi
 import com.example.caso1.data.api.InterceptorConectividad
@@ -21,6 +22,9 @@ import com.example.caso1.data.repository.RepositorioGalpones
 import com.example.caso1.notifications.NotificationHelper
 import com.example.caso1.notifications.debeNotificar
 import com.example.caso1.work.AlertasWorker
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
 
@@ -68,6 +72,17 @@ class ContenedorApp(contexto: Context) {
     val programarRevisionDemo: () -> Unit = { AlertasWorker.programarRevision(app) }
 
     val sincronizador: Sincronizador by lazy { Sincronizador(repositorio, notificarCritico) }
+
+    /**
+     * Respuesta 10: mediciones automáticas cada minuto mientras el proceso está vivo.
+     * WorkManager no puede despertar cada minuto (mínimo 15), por eso el ciclo vive aquí.
+     */
+    private val alcanceSimulacion = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+    private val simulador: SimuladorAutomatico by lazy { SimuladorAutomatico(sincronizador, sesion) }
+
+    fun iniciarSimulacion() {
+        simulador.iniciar(alcanceSimulacion)
+    }
 }
 
 class AlertaTemperaturasApp : Application() {
@@ -79,6 +94,7 @@ class AlertaTemperaturasApp : Application() {
         // The channel must exist before any notification, including those posted by WorkManager
         NotificationHelper.crearCanal(this)
         contenedor = ContenedorApp(this)
+        contenedor.iniciarSimulacion()
     }
 }
 

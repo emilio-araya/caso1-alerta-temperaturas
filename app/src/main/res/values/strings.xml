@@ -86,6 +86,8 @@
     <string name="home_sin_conexion_activado">Modo sin conexión: la app muestra los datos guardados en el teléfono.</string>
     <string name="home_sin_conexion_desactivado">Conexión restablecida.</string>
     <string name="home_simulacion_iniciada">Pico de calor simulado en el Galpón %1$d. La alerta llega en 10 s, aunque cierres la app.</string>
+    <string name="home_mediciones_automaticas">Mediciones automáticas cada 1 min mientras la app está abierta · última lectura %1$s</string>
+    <string name="home_mediciones_automaticas_sin_lectura">Mediciones automáticas cada 1 min mientras la app está abierta</string>
 
     <!-- Conexión con el sistema de monitoreo -->
     <string name="red_sin_conexion">Sin conexión</string>
@@ -102,8 +104,12 @@
 
     <!-- Detalle del galpón -->
     <string name="detalle_temperatura">Temperatura</string>
-    <string name="detalle_rango_horas">Últimas %1$d h · una lectura cada 15 min</string>
-    <string name="detalle_rango_lecturas">Últimas %1$d lecturas · una lectura cada 15 min</string>
+    <string name="detalle_humedad">Humedad relativa</string>
+    <string name="detalle_periodo_seis_horas">6 h</string>
+    <string name="detalle_periodo_veinticuatro_horas">24 h</string>
+    <string name="detalle_periodo_todo">Todo</string>
+    <string name="detalle_rango_horas">Últimas %1$d h</string>
+    <string name="detalle_rango_lecturas">Últimas %1$d lecturas</string>
     <string name="detalle_registrar">Registrar acción en este galpón</string>
     <string name="detalle_mediciones">Mediciones</string>
     <string name="detalle_col_hora">Hora</string>
@@ -112,6 +118,7 @@
     <string name="detalle_col_estado">Estado</string>
     <string name="detalle_lectura_de">Lectura de las %1$s</string>
     <string name="detalle_grafico_descripcion">Gráfico de temperatura: de %1$s a %2$s grados</string>
+    <string name="detalle_grafico_humedad_descripcion">Gráfico de humedad: de %1$s a %2$s por ciento</string>
 
     <!-- Alertas -->
     <string name="alertas_titulo">Alertas activas</string>

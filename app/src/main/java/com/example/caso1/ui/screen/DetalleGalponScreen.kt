@@ -1,5 +1,6 @@
 package com.example.caso1.ui.screen
 
+import androidx.annotation.StringRes
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.*
@@ -11,6 +12,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.drawscope.Stroke
@@ -32,6 +34,7 @@ import com.example.caso1.ui.theme.EstiloEstado
 import com.example.caso1.ui.theme.LocalPaletaEstados
 import com.example.caso1.viewmodel.DetalleUiState
 import com.example.caso1.viewmodel.DetalleViewModel
+import com.example.caso1.viewmodel.PeriodoGrafico
 
 @Composable
 fun DetalleGalponScreen(onBack: () -> Unit, onRegistrar: ((Int) -> Unit)?, viewModel: DetalleViewModel = viewModel(factory = DetalleViewModel.Factory)) {
@@ -41,14 +44,20 @@ fun DetalleGalponScreen(onBack: () -> Unit, onRegistrar: ((Int) -> Unit)?, viewM
         DetalleContenido(
             state,
             Modifier.padding(padding),
-            onRegistrar = onRegistrar?.let { { it(state.galponId) } }
+            onRegistrar = onRegistrar?.let { { it(state.galponId) } },
+            onCambiarPeriodo = viewModel::cambiarPeriodo
         )
     }
 }
 
 /** Contenido del detalle, reutilizado como panel derecho en pantallas expandidas. */
 @Composable
-fun DetalleContenido(state: DetalleUiState, modifier: Modifier = Modifier, onRegistrar: (() -> Unit)? = null) {
+fun DetalleContenido(
+    state: DetalleUiState,
+    modifier: Modifier = Modifier,
+    onRegistrar: (() -> Unit)? = null,
+    onCambiarPeriodo: (PeriodoGrafico) -> Unit = {}
+) {
     val mediciones = state.mediciones
     val ultima = state.ultima
     val estado = state.estado
@@ -70,19 +79,42 @@ fun DetalleContenido(state: DetalleUiState, modifier: Modifier = Modifier, onReg
 
         item {
             Column(Modifier.padding(16.dp)) {
-                Text(stringResource(R.string.detalle_temperatura), style = MaterialTheme.typography.titleMedium)
+                // Período del gráfico (respuesta 11): 6 h por defecto, 24 h o todo lo guardado
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    PeriodoGrafico.entries.forEach { p ->
+                        FilterChip(
+                            selected = state.periodo == p,
+                            onClick = { onCambiarPeriodo(p) },
+                            label = { Text(stringResource(p.etiquetaRes())) }
+                        )
+                    }
+                }
                 Text(
-                    rangoCubierto(mediciones),
+                    rangoCubierto(state.medicionesGrafico),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 Spacer(Modifier.height(12.dp))
+
+                Text(stringResource(R.string.detalle_temperatura), style = MaterialTheme.typography.titleMedium)
+                Spacer(Modifier.height(8.dp))
                 Card(
                     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLowest),
                     border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
                 ) {
-                    GraficoTemperatura(mediciones.reversed(), state.umbrales, Modifier.padding(12.dp))
+                    GraficoTemperatura(state.medicionesGrafico, state.umbrales, Modifier.padding(12.dp))
                 }
+
+                Spacer(Modifier.height(20.dp))
+                Text(stringResource(R.string.detalle_humedad), style = MaterialTheme.typography.titleMedium)
+                Spacer(Modifier.height(8.dp))
+                Card(
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLowest),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+                ) {
+                    GraficoHumedad(state.medicionesGrafico, state.umbrales, Modifier.padding(12.dp))
+                }
+
                 // En crítico ya está el botón "Registrar acción correctiva" arriba
                 if (onRegistrar != null && estado != EstadoGalpon.CRITICO) {
                     Spacer(Modifier.height(16.dp))
@@ -179,33 +211,112 @@ private fun FilaTabla(
     }
 }
 
-/** "Últimas 6 h · …" o, con pocas lecturas, "Últimas 4 lecturas · …". */
+/** "Últimas 6 h" o, con pocas lecturas, "Últimas 4 lecturas", para el período elegido. */
 @Composable
 private fun rangoCubierto(mediciones: List<MedicionEntity>): String {
     val horas = if (mediciones.size < 2) 0.0
-        else (mediciones.first().fechaHora - mediciones.last().fechaHora) / 3_600_000.0
+        else Math.abs(mediciones.first().fechaHora - mediciones.last().fechaHora) / 3_600_000.0
     return if (horas < 1.5) stringResource(R.string.detalle_rango_lecturas, mediciones.size)
         else stringResource(R.string.detalle_rango_horas, Math.round(horas).toInt())
 }
 
-/** Gráfico de línea con las zonas de los umbrales sombreadas y la última lectura marcada. */
+/** Respuesta 11: etiqueta corta del período del gráfico. */
+@StringRes
+private fun PeriodoGrafico.etiquetaRes(): Int = when (this) {
+    PeriodoGrafico.SEIS_HORAS -> R.string.detalle_periodo_seis_horas
+    PeriodoGrafico.VEINTICUATRO_HORAS -> R.string.detalle_periodo_veinticuatro_horas
+    PeriodoGrafico.TODO -> R.string.detalle_periodo_todo
+}
+
+/** Temperatura del período: rango ajustado a los datos, mostrando siempre los dos umbrales altos. */
 @Composable
 private fun GraficoTemperatura(cronologicas: List<MedicionEntity>, umbrales: ConfigUmbrales, modifier: Modifier = Modifier) {
     if (cronologicas.size < 2) return
     val paleta = LocalPaletaEstados.current
+    val temps = cronologicas.map { it.temperatura }
+    val normalMax = umbrales.tempNormalMax
+    val advertenciaMax = umbrales.tempAdvertenciaMax
+    val min = minOf(temps.min(), normalMax) - 1.5
+    val max = maxOf(temps.max(), advertenciaMax) + 1.5
+    val ultima = temps.last()
+
+    GraficoLinea(
+        cronologicas = cronologicas,
+        valores = temps,
+        min = min,
+        max = max,
+        // Zonas: amarilla entre el máximo normal y el de advertencia, roja sobre este último
+        franjas = listOf(
+            Triple(normalMax, advertenciaMax, paleta.advertencia.franja.copy(alpha = 0.14f)),
+            Triple(advertenciaMax, max, paleta.critico.franja.copy(alpha = 0.10f))
+        ),
+        umbrales = listOf(normalMax to paleta.advertencia.franja, advertenciaMax to paleta.critico.franja),
+        sufijo = "°",
+        formatear = ::cifraUmbral,
+        colorUltima = estadoTemperatura(ultima, umbrales).let { paleta.de(it).franja },
+        descripcion = stringResource(R.string.detalle_grafico_descripcion, cifra(temps.first()), cifra(ultima)),
+        modifier = modifier
+    )
+}
+
+/** Humedad relativa del período: rango ajustado a los datos, mostrando siempre sus tres umbrales. */
+@Composable
+private fun GraficoHumedad(cronologicas: List<MedicionEntity>, umbrales: ConfigUmbrales, modifier: Modifier = Modifier) {
+    if (cronologicas.size < 2) return
+    val paleta = LocalPaletaEstados.current
+    val valores = cronologicas.map { it.humedad }
+    val normalMin = umbrales.humedadNormalMin
+    val normalMax = umbrales.humedadNormalMax
+    val advertenciaMax = umbrales.humedadAdvertenciaMax
+    val min = maxOf(0.0, minOf(valores.min(), normalMin) - 5)
+    val max = minOf(100.0, maxOf(valores.max(), advertenciaMax) + 5)
+    val ultima = valores.last()
+
+    GraficoLinea(
+        cronologicas = cronologicas,
+        valores = valores,
+        min = min,
+        max = max,
+        franjas = listOf(
+            Triple(normalMax, advertenciaMax, paleta.advertencia.franja.copy(alpha = 0.14f)),
+            Triple(advertenciaMax, max, paleta.critico.franja.copy(alpha = 0.10f))
+        ),
+        umbrales = listOf(
+            normalMin to paleta.advertencia.franja,
+            normalMax to paleta.advertencia.franja,
+            advertenciaMax to paleta.critico.franja
+        ),
+        sufijo = "%",
+        formatear = ::cifraUmbral,
+        colorUltima = estadoHumedad(ultima, umbrales).let { paleta.de(it).franja },
+        descripcion = stringResource(R.string.detalle_grafico_humedad_descripcion, cifra(valores.first(), 0), cifra(ultima, 0)),
+        modifier = modifier
+    )
+}
+
+/**
+ * Gráfico de línea compartido por temperatura y humedad: zonas de los umbrales sombreadas,
+ * líneas punteadas con su valor y la última lectura marcada con el color de su estado.
+ */
+@Composable
+private fun GraficoLinea(
+    cronologicas: List<MedicionEntity>,
+    valores: List<Double>,
+    min: Double,
+    max: Double,
+    franjas: List<Triple<Double, Double, Color>>,
+    umbrales: List<Pair<Double, Color>>,
+    sufijo: String,
+    formatear: (Double) -> String,
+    colorUltima: Color,
+    descripcion: String,
+    modifier: Modifier = Modifier
+) {
     val linea = MaterialTheme.colorScheme.primary
     val fondo = MaterialTheme.colorScheme.surfaceContainerLowest
     val estiloEje = MaterialTheme.typography.labelSmall.copy(color = MaterialTheme.colorScheme.onSurfaceVariant)
     val medidor = rememberTextMeasurer()
-    val temps = cronologicas.map { it.temperatura }
-    val normalMax = umbrales.tempNormalMax
-    val advertenciaMax = umbrales.tempAdvertenciaMax
-    // Rango ajustado a los datos, pero siempre mostrando las líneas de los dos umbrales altos
-    val min = minOf(temps.min(), normalMax) - 1.5
-    val max = maxOf(temps.max(), advertenciaMax) + 1.5
-    val ultima = temps.last()
-    val colorUltima = estadoTemperatura(ultima, umbrales).let { paleta.de(it).franja }
-    val descripcion = stringResource(R.string.detalle_grafico_descripcion, cifra(temps.first()), cifra(ultima))
+    val ultima = valores.last()
 
     Canvas(modifier.fillMaxWidth().height(190.dp).semantics { contentDescription = descripcion }) {
         val margenDerecho = 30.dp.toPx()
@@ -213,23 +324,21 @@ private fun GraficoTemperatura(cronologicas: List<MedicionEntity>, umbrales: Con
         val ancho = size.width - margenDerecho
         val alto = size.height - margenInferior
         fun y(t: Double) = (alto * (1 - (t - min) / (max - min))).toFloat()
-        val paso = ancho / (temps.size - 1)
+        val paso = ancho / (valores.size - 1)
 
-        // Zonas: amarilla entre el máximo normal y el de advertencia, roja sobre este último
-        drawRect(paleta.advertencia.franja.copy(alpha = 0.14f), Offset(0f, y(advertenciaMax)),
-            Size(ancho, y(normalMax) - y(advertenciaMax)))
-        drawRect(paleta.critico.franja.copy(alpha = 0.10f), Offset(0f, 0f), Size(ancho, y(advertenciaMax)))
+        franjas.forEach { (desde, hasta, color) ->
+            drawRect(color, Offset(0f, y(hasta)), Size(ancho, y(desde) - y(hasta)))
+        }
 
         val punteada = PathEffect.dashPathEffect(floatArrayOf(10f, 8f))
-        listOf(normalMax to paleta.advertencia.franja, advertenciaMax to paleta.critico.franja)
-            .forEach { (umbral, color) ->
-                drawLine(color, Offset(0f, y(umbral)), Offset(ancho, y(umbral)), strokeWidth = 2f, pathEffect = punteada)
-                val t = medidor.measure("${cifraUmbral(umbral)}°", estiloEje)
-                drawText(t, topLeft = Offset(ancho + 6.dp.toPx(), y(umbral) - t.size.height / 2f))
-            }
+        umbrales.forEach { (umbral, color) ->
+            drawLine(color, Offset(0f, y(umbral)), Offset(ancho, y(umbral)), strokeWidth = 2f, pathEffect = punteada)
+            val t = medidor.measure("${formatear(umbral)}$sufijo", estiloEje)
+            drawText(t, topLeft = Offset(ancho + 6.dp.toPx(), y(umbral) - t.size.height / 2f))
+        }
 
         val path = Path().apply {
-            temps.forEachIndexed { i, t -> if (i == 0) moveTo(0f, y(t)) else lineTo(i * paso, y(t)) }
+            valores.forEachIndexed { i, v -> if (i == 0) moveTo(0f, y(v)) else lineTo(i * paso, y(v)) }
         }
         drawPath(path, linea, style = Stroke(width = 2.5.dp.toPx()))
 
@@ -238,10 +347,10 @@ private fun GraficoTemperatura(cronologicas: List<MedicionEntity>, umbrales: Con
         drawCircle(fondo, radius = 7.dp.toPx(), center = fin)
         drawCircle(colorUltima, radius = 5.dp.toPx(), center = fin)
 
-        // Eje de tiempo: primera y última hora
+        // Eje de tiempo: primera y última hora del período
         val inicio = medidor.measure(formatoHora(cronologicas.first().fechaHora), estiloEje)
-        val ahora = medidor.measure(formatoHora(cronologicas.last().fechaHora), estiloEje)
+        val finHora = medidor.measure(formatoHora(cronologicas.last().fechaHora), estiloEje)
         drawText(inicio, topLeft = Offset(0f, alto + 4.dp.toPx()))
-        drawText(ahora, topLeft = Offset(ancho - ahora.size.width, alto + 4.dp.toPx()))
+        drawText(finHora, topLeft = Offset(ancho - finHora.size.width, alto + 4.dp.toPx()))
     }
 }

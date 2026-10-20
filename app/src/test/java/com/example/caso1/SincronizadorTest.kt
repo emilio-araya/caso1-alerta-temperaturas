@@ -65,6 +65,17 @@ class SincronizadorTest {
         assertEquals(0, repo.vecesRefrescado)
     }
 
+    @Test fun generarMedicionesAutomaticasNotificaLasCriticasNuevas() = runTest {
+        repo.proximasCriticasAutomaticas = listOf(critica)
+
+        val r = sincronizador.generarMedicionesAutomaticas()
+
+        assertEquals(listOf(critica), r)
+        assertEquals(listOf(critica), notificadas)
+        assertEquals(1, repo.vecesSimulacionAutomatica)
+        assertEquals(0, repo.vecesRefrescado)
+    }
+
     @Test fun sinConexionNoFallaNiNotifica() = runTest {
         repo.proximoResultado = ResultadoSincronizacion.SinConexion
 

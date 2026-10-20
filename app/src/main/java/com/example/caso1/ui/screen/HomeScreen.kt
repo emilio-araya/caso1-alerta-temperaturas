@@ -176,6 +176,17 @@ fun HomeScreen(
                         onClickGalpon(g.id)
                     }
                 }
+                // Respuesta 10: el aviso de que las lecturas se generan solas mientras la app está abierta
+                item(span = { GridItemSpan(maxLineSpan) }, key = "mediciones_automaticas") {
+                    Text(
+                        state.boletin?.actualizado?.let {
+                            stringResource(R.string.home_mediciones_automaticas, formatoHora(it))
+                        } ?: stringResource(R.string.home_mediciones_automaticas_sin_lectura),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(top = 4.dp)
+                    )
+                }
             }
         }
 
@@ -200,7 +211,8 @@ fun HomeScreen(
                         )
                         DetalleContenido(
                             detalle,
-                            onRegistrar = if (rol == Rol.OPERARIO) { { onRegistrar(detalle.galponId) } } else null
+                            onRegistrar = if (rol == Rol.OPERARIO) { { onRegistrar(detalle.galponId) } } else null,
+                            onCambiarPeriodo = detalleVm::cambiarPeriodo
                         )
                     }
                 }

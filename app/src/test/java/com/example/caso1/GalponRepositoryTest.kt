@@ -10,6 +10,7 @@ import com.example.caso1.data.api.SimulacionDto
 import com.example.caso1.data.local.AlertaEntity
 import com.example.caso1.data.local.DatosMonitoreo
 import com.example.caso1.data.local.EventoEntity
+import com.example.caso1.data.local.GalponEntity
 import com.example.caso1.data.local.MedicionEntity
 import com.example.caso1.data.local.UmbralesRepository
 import com.example.caso1.data.local.crearAlmacenMonitoreo
@@ -18,6 +19,7 @@ import com.example.caso1.data.model.ConfigUmbrales
 import com.example.caso1.data.model.EstadoGalpon
 import com.example.caso1.data.model.NivelAlerta
 import com.example.caso1.data.model.Rol
+import com.example.caso1.data.model.valoresSimulados
 import com.example.caso1.data.repository.ACCION_CONFIRMAR
 import com.example.caso1.data.repository.EstadoConexion
 import com.example.caso1.data.repository.GalponRepository
@@ -375,6 +377,135 @@ class GalponRepositoryTest {
 
         assertTrue(error is IllegalArgumentException)
         assertDatosGuardadosIntactos(repo)
+    }
+
+    // --- Automatic measurements (Q&A 10): one per shed per minute, evaluated on the device ---
+
+    /**
+     * Deja en DataStore galpones con una lectura base sin evaluar, como datos ya guardados:
+     * así la primera medición automática es la que crea la alerta.
+     */
+    private fun conDatosSembrados(
+        temperaturas: Map<Int, Double>,
+        despues: suspend (GalponRepository) -> Unit
+    ) = runBlocking {
+        val store = abrirAlmacen()
+        store.updateData {
+            DatosMonitoreo(
+                galpones = temperaturas.keys.sorted().map { GalponEntity(it, "Granja", "Galpón $it", EstadoGalpon.NORMAL) },
+                mediciones = temperaturas.entries.mapIndexed { i, (galponId, temperatura) ->
+                    MedicionEntity(i + 1, galponId, temperatura, 60.0, ahora - 60_000)
+                },
+                siguienteIdMedicion = temperaturas.size + 1
+            )
+        }
+        despues(GalponRepository(store, ApiControlada(ahora), reloj = { ahora }))
+    }
+
+    @Test fun medicionesAutomaticasAgreganUnaPorGalponYDevuelvenSoloLasCriticasNuevas() =
+        conDatosSembrados(mapOf(1 to 35.0, 2 to 30.0)) { repo ->
+            val nuevas = repo.registrarMedicionesAutomaticas()
+
+            assertEquals(listOf(1), nuevas.map { it.galponId })
+            assertEquals(NivelAlerta.CRITICO, nuevas.single().nivel)
+
+            // Cada fila nueva parte de la última lectura del galpón y usa la hora del reloj
+            val (t1, h1) = valoresSimulados(1, ahora / 60_000, 35.0, 60.0)
+            val (t2, h2) = valoresSimulados(2, ahora / 60_000, 30.0, 60.0)
+            assertEquals(
+                listOf(MedicionEntity(3, 1, t1, h1, ahora), MedicionEntity(1, 1, 35.0, 60.0, ahora - 60_000)),
+                repo.mediciones(1).first()
+            )
+            assertEquals(
+                listOf(MedicionEntity(4, 2, t2, h2, ahora), MedicionEntity(2, 2, 30.0, 60.0, ahora - 60_000)),
+                repo.mediciones(2).first()
+            )
+            assertEquals(EstadoGalpon.CRITICO, repo.galpones.first().first { it.id == 1 }.estado)
+            assertEquals(listOf(1), repo.alertasActivas.first().filter { it.nivel == NivelAlerta.CRITICO }.map { it.galponId })
+        }
+
+    @Test fun cadaSimulacionAutomaticaAgregaFilasNuevasConLaHoraDelReloj() = runBlocking {
+        val store = abrirAlmacen()
+        store.updateData {
+            DatosMonitoreo(
+                galpones = listOf(GalponEntity(1, "Granja Norte", "Galpón 1", EstadoGalpon.NORMAL)),
+                mediciones = listOf(MedicionEntity(1, 1, 35.0, 60.0, ahora - 60_000)),
+                siguienteIdMedicion = 2
+            )
+        }
+        var reloj = ahora
+        val repo = GalponRepository(store, ApiControlada(ahora), reloj = { reloj })
+
+        repo.registrarMedicionesAutomaticas()
+        reloj = ahora + 60_000
+        repo.registrarMedicionesAutomaticas()
+
+        // Se agregan, no se reemplazan: tres filas, cada una con su instante e id nuevos
+        val filas = repo.mediciones(1).first()
+        assertEquals(3, filas.size)
+        assertEquals(listOf(ahora + 60_000, ahora, ahora - 60_000), filas.map { it.fechaHora })
+        assertEquals(listOf(3, 2, 1), filas.map { it.id })
+    }
+
+    @Test fun lasMedicionesAutomaticasPodanLasFilasVencidas() = runBlocking {
+        // Sin esta poda el archivo crecería sin límite mientras la app está abierta (una lectura por minuto)
+        val vencida = ahora - RETENCION_MEDICIONES_MS - 1
+        val store = abrirAlmacen()
+        store.updateData {
+            DatosMonitoreo(
+                galpones = listOf(GalponEntity(1, "Granja Norte", "Galpón 1", EstadoGalpon.NORMAL)),
+                mediciones = listOf(
+                    MedicionEntity(1, 1, 20.0, 60.0, vencida),
+                    MedicionEntity(2, 1, 30.0, 60.0, ahora - 60_000)
+                ),
+                siguienteIdMedicion = 3
+            )
+        }
+        val repo = GalponRepository(store, ApiControlada(ahora), reloj = { ahora })
+
+        repo.registrarMedicionesAutomaticas()
+
+        val horas = repo.mediciones(1).first().map { it.fechaHora }
+        assertEquals(listOf(ahora, ahora - 60_000), horas)
+    }
+
+    @Test fun lasMedicionesAutomaticasSeGeneranSinConexion() = runBlocking {
+        val store = abrirAlmacen()
+        store.updateData {
+            DatosMonitoreo(
+                galpones = listOf(GalponEntity(1, "Granja Norte", "Galpón 1", EstadoGalpon.NORMAL)),
+                mediciones = listOf(MedicionEntity(1, 1, 35.0, 60.0, ahora - 60_000)),
+                siguienteIdMedicion = 2
+            )
+        }
+        val api = ApiControlada(ahora).apply { falla = { throw IOException("sin red") } }
+        val repo = GalponRepository(store, api, reloj = { ahora })
+        val llamadasAntes = api.llamadas
+
+        val nuevas = repo.registrarMedicionesAutomaticas()
+
+        assertEquals(llamadasAntes, api.llamadas)
+        assertEquals(1, nuevas.size)
+        assertEquals(2, repo.mediciones(1).first().size)
+    }
+
+    @Test fun galponSinLecturasPreviasNoGeneraMedicion() = runBlocking {
+        val store = abrirAlmacen()
+        store.updateData {
+            DatosMonitoreo(
+                galpones = listOf(
+                    GalponEntity(1, "Granja Norte", "Galpón 1", EstadoGalpon.NORMAL),
+                    GalponEntity(2, "Granja Sur", "Galpón 2", EstadoGalpon.NORMAL)
+                ),
+                mediciones = listOf(MedicionEntity(1, 1, 35.0, 60.0, ahora - 60_000)),
+                siguienteIdMedicion = 2
+            )
+        }
+        val repo = GalponRepository(store, ApiControlada(ahora), reloj = { ahora })
+
+        repo.registrarMedicionesAutomaticas()
+
+        assertEquals(emptyList<MedicionEntity>(), repo.mediciones(2).first())
     }
 
     // --- Local actions ---

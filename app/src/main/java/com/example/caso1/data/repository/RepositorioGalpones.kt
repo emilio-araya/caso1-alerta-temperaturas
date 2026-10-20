@@ -49,6 +49,12 @@ interface RepositorioGalpones {
      */
     suspend fun registrarMedicionSimulada(galponId: Int, temperatura: Double, humedad: Double): List<AlertaEntity>
 
+    /**
+     * Respuesta 10 del docente: agrega una medición ficticia por galpón con lecturas previas,
+     * en un solo `updateData` y sin red. Devuelve las alertas críticas nuevas.
+     */
+    suspend fun registrarMedicionesAutomaticas(): List<AlertaEntity>
+
     suspend fun confirmarAlerta(alertaId: Int, galponId: Int, rol: Rol, detalle: String)
 
     suspend fun registrarAccion(galponId: Int, tipoAccion: String, descripcion: String, usuario: String?)

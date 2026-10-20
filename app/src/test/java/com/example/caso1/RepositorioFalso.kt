@@ -10,7 +10,6 @@ import com.example.caso1.data.repository.RepositorioGalpones
 import com.example.caso1.data.repository.ResultadoSincronizacion
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.emptyFlow
 
 /**
  * Repositorio en memoria para los tests: sin DataStore, red ni emulador. Guarda las
@@ -37,6 +36,10 @@ class RepositorioFalso(galponesIniciales: List<GalponEntity> = emptyList()) : Re
     var proximasCriticasReevaluadas: List<AlertaEntity> = emptyList()
     var vecesReevaluado = 0
 
+    /** Lo que devolverá el próximo registrarMedicionesAutomaticas(). */
+    var proximasCriticasAutomaticas: List<AlertaEntity> = emptyList()
+    var vecesSimulacionAutomatica = 0
+
     override val galpones = MutableStateFlow(galponesIniciales)
     override val alertasActivas = MutableStateFlow<List<AlertaEntity>>(emptyList())
     override val alertas = MutableStateFlow<List<AlertaEntity>>(emptyList())
@@ -44,7 +47,11 @@ class RepositorioFalso(galponesIniciales: List<GalponEntity> = emptyList()) : Re
     override val ultimasMediciones: Flow<List<MedicionEntity>> = MutableStateFlow(emptyList())
     override val estadoConexion = MutableStateFlow(EstadoConexion.SIN_DATOS)
 
-    override fun mediciones(galponId: Int): Flow<List<MedicionEntity>> = emptyFlow()
+    /** Mediciones que entrega [mediciones]; cada test las carga antes de crear el ViewModel. */
+    val medicionesPorGalpon = mutableMapOf<Int, MutableStateFlow<List<MedicionEntity>>>()
+
+    override fun mediciones(galponId: Int): Flow<List<MedicionEntity>> =
+        medicionesPorGalpon.getOrPut(galponId) { MutableStateFlow(emptyList()) }
 
     override suspend fun refrescar(): ResultadoSincronizacion {
         vecesRefrescado++
@@ -56,6 +63,11 @@ class RepositorioFalso(galponesIniciales: List<GalponEntity> = emptyList()) : Re
     override suspend fun reevaluar(): List<AlertaEntity> {
         vecesReevaluado++
         return proximasCriticasReevaluadas
+    }
+
+    override suspend fun registrarMedicionesAutomaticas(): List<AlertaEntity> {
+        vecesSimulacionAutomatica++
+        return proximasCriticasAutomaticas
     }
 
     override suspend fun simularPicoDeCalor(): Int? = null
