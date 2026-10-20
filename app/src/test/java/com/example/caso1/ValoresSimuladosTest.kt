@@ -45,6 +45,21 @@ class ValoresSimuladosTest {
         assertNotEquals(enCero, otroGalpon)
     }
 
+    @Test fun noSeQuedaPegadoAlMaximoSiParteDeUnaLecturaCritica() {
+        // Sin reversión, cada lectura parte de la anterior: en la media hora en que el seno sube,
+        // la simulación se arrastra hasta 40 °C / 95 % y las tarjetas quedan pegadas al máximo.
+        var temperatura = 33.0
+        var humedad = 70.0
+        for (minuto in 0L until 15L) {
+            val (t, h) = valoresSimulados(1, minuto, temperatura, humedad)
+            temperatura = t
+            humedad = h
+        }
+
+        assertTrue("temperatura $temperatura", temperatura <= 36.5)
+        assertTrue("humedad $humedad", humedad <= 85.0)
+    }
+
     @Test fun seMantieneCercaDeLaBaseYRedondeaComoSeMuestra() {
         for (minuto in 0L..180L) {
             val (temperatura, humedad) = valoresSimulados(2, minuto, tempBase, humedadBase)
