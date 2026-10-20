@@ -1,6 +1,7 @@
 package com.example.caso1
 
 import com.example.caso1.data.api.MockMonitorApi
+import com.example.caso1.data.model.ConfigUmbrales
 import com.example.caso1.data.model.EstadoGalpon
 import com.example.caso1.data.model.Umbrales
 import org.junit.Assert.assertEquals
@@ -49,6 +50,23 @@ class UmbralesTest {
         assertEquals("TEMPERATURA_BAJA", Umbrales.causa(15.0, 60.0))
         assertEquals("HUMEDAD_ALTA", Umbrales.causa(30.0, 85.0))       // gana la condición crítica
         assertEquals("HUMEDAD_BAJA", Umbrales.causa(24.0, 40.0))
+    }
+
+    @Test fun configPersonalizadaCambiaLosBordes() {
+        val c = ConfigUmbrales(tempNormalMax = 25.0, tempAdvertenciaMax = 30.0)
+        assertEquals(EstadoGalpon.NORMAL, c.evaluar(25.0, 60.0))
+        assertEquals(EstadoGalpon.ADVERTENCIA, c.evaluar(25.1, 60.0))
+        assertEquals(EstadoGalpon.ADVERTENCIA, c.evaluar(30.0, 60.0))
+        assertEquals(EstadoGalpon.CRITICO, c.evaluar(30.1, 60.0))
+        assertEquals("TEMPERATURA_ALTA", c.causa(25.1, 60.0))
+        assertNull(c.causa(25.0, 60.0))
+    }
+
+    @Test fun predeterminadosSonLosDeSiempre() {
+        assertEquals(ConfigUmbrales(18.0, 28.0, 32.0, 50.0, 70.0, 80.0), Umbrales.PREDETERMINADOS)
+        assertEquals(Umbrales.PREDETERMINADOS, ConfigUmbrales())
+        assertEquals(EstadoGalpon.ADVERTENCIA, ConfigUmbrales().evaluar(32.0, 60.0))
+        assertEquals(EstadoGalpon.CRITICO, ConfigUmbrales().evaluar(32.1, 60.0))
     }
 
     @Test fun mockCoherenteEntreLlamadas() {

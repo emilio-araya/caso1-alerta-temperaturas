@@ -30,6 +30,17 @@ class SincronizadorTest {
         assertFalse(sincronizador.sincronizando.value)
     }
 
+    @Test fun reevaluarNotificaLasCriticasNuevasSinUsarLaRed() = runTest {
+        repo.proximasCriticasReevaluadas = listOf(critica)
+
+        val r = sincronizador.reevaluar()
+
+        assertEquals(listOf(critica), r)
+        assertEquals(listOf(critica), notificadas)
+        assertEquals(1, repo.vecesReevaluado)
+        assertEquals(0, repo.vecesRefrescado)
+    }
+
     @Test fun sinConexionNoFallaNiNotifica() = runTest {
         repo.proximoResultado = ResultadoSincronizacion.SinConexion
 

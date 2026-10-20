@@ -12,6 +12,7 @@ import kotlinx.coroutines.sync.withLock
  * Único punto que sincroniza con la API: lo usan la pantalla de inicio (deslizar
  * para actualizar), la barra de navegación (reintentar / vuelve la red) y el
  * trabajo en segundo plano. Notifica solo las alertas críticas nuevas.
+ * También reevalúa lo guardado cuando cambian los umbrales.
  */
 class Sincronizador(
     private val repo: RepositorioGalpones,
@@ -31,5 +32,10 @@ class Sincronizador(
         } finally {
             _sincronizando.value = false
         }
+    }
+
+    /** Tras cambiar los umbrales: recalcula con lo guardado (sin red) y notifica las críticas nuevas. */
+    suspend fun reevaluar(): List<AlertaEntity> = mutex.withLock {
+        repo.reevaluar().also { it.forEach(notificarCritico) }
     }
 }

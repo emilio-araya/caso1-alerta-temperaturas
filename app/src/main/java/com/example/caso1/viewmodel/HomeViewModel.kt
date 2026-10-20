@@ -9,7 +9,9 @@ import com.example.caso1.contenedor
 import com.example.caso1.data.Sincronizador
 import com.example.caso1.data.local.GalponEntity
 import com.example.caso1.data.local.MedicionEntity
+import com.example.caso1.data.model.ConfigUmbrales
 import com.example.caso1.data.model.EstadoGalpon
+import com.example.caso1.data.model.Umbrales
 import com.example.caso1.data.repository.RepositorioGalpones
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -31,19 +33,21 @@ data class HomeUiState(
     val ultimaPorGalpon: Map<Int, MedicionEntity> = emptyMap(),
     val alertasActivas: Int = 0,
     val alertasHoy: Int = 0,
-    val boletin: Boletin? = null
+    val boletin: Boletin? = null,
+    val umbrales: ConfigUmbrales = Umbrales.PREDETERMINADOS   // para colorear cifras y la escala
 )
 
 class HomeViewModel(
     private val repo: RepositorioGalpones,
     private val sincronizador: Sincronizador,
     private val programarRevisionDemo: () -> Unit,
-    private val sinConexionSimulada: MutableStateFlow<Boolean>
+    private val sinConexionSimulada: MutableStateFlow<Boolean>,
+    umbrales: Flow<ConfigUmbrales> = flowOf(Umbrales.PREDETERMINADOS)
 ) : ViewModel() {
 
     val uiState: StateFlow<HomeUiState> = combine(
-        repo.galpones, repo.ultimasMediciones, repo.alertasActivas, repo.alertas
-    ) { galpones, ultimas, activas, todas ->
+        repo.galpones, repo.ultimasMediciones, repo.alertasActivas, repo.alertas, umbrales
+    ) { galpones, ultimas, activas, todas, config ->
         val hoy = inicioDeHoy()
         val porGalpon = ultimas.associateBy { it.galponId }
         HomeUiState(
@@ -52,7 +56,8 @@ class HomeViewModel(
             ultimaPorGalpon = porGalpon,
             alertasActivas = activas.size,
             alertasHoy = todas.count { it.fechaHora >= hoy },
-            boletin = armarBoletin(galpones, porGalpon)
+            boletin = armarBoletin(galpones, porGalpon),
+            umbrales = config
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), HomeUiState())
 
@@ -118,7 +123,7 @@ class HomeViewModel(
         val Factory = viewModelFactory {
             initializer {
                 val c = contenedor()
-                HomeViewModel(c.repositorio, c.sincronizador, c.programarRevisionDemo, c.sinConexionSimulada)
+                HomeViewModel(c.repositorio, c.sincronizador, c.programarRevisionDemo, c.sinConexionSimulada, c.umbrales.umbrales)
             }
         }
     }

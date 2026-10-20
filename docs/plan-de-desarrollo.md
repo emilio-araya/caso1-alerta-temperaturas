@@ -102,7 +102,8 @@ Se evalúan por separado temperatura y humedad; **el estado del galpón es el pe
 | Crítico | T > 32 | H > 80 |
 
 - **Supuesto (confirmar con el docente):** frío (T < 18) y ambiente seco (H < 50) son *Advertencia*; el caso solo menciona el calor.
-- Implementado en `Umbrales` (`data/model/Modelos.kt`) y replicado en `mock-api/datos.js`. Ambos lados tienen tests en los bordes (17.9/18, 28/28.1, 32/32.1 °C; 49.9/50, 70/70.1, 80/80.1 %).
+- Son los valores **predeterminados**: los umbrales son ficticios y configurables (respuesta 1 del docente). Supervisor y jefatura los cambian en menú ⋮ → *Configurar umbrales*; la validación está en `viewmodel/ValidacionUmbrales.kt` y se guardan en DataStore (`umbrales`, `data/local/RepositorioUmbrales.kt`).
+- La regla se evalúa **en el dispositivo** (`ConfigUmbrales` en `data/model/Modelos.kt`): `GalponRepository` calcula el estado y la alerta de cada galpón con su última medición; al guardar umbrales nuevos se recalcula sin red. Los umbrales de `mock-api/datos.js` solo simulan el servidor. Tests en los bordes (17.9/18, 28/28.1, 32/32.1 °C; 49.9/50, 70/70.1, 80/80.1 %) y con umbrales personalizados.
 - Una alerta crítica nueva genera una notificación; una alerta que sigue activa no se vuelve a notificar.
 
 ## 6. Notificaciones y demo

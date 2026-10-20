@@ -11,7 +11,7 @@ import com.example.caso1.data.local.GalponEntity
 import com.example.caso1.data.model.EstadoGalpon
 import com.example.caso1.data.model.NivelAlerta
 import com.example.caso1.data.model.Rol
-import com.example.caso1.data.model.Umbrales
+import com.example.caso1.data.model.ConfigUmbrales
 import com.example.caso1.data.repository.ACCION_CONFIRMAR
 import com.example.caso1.ui.theme.ColoresEstado
 import com.example.caso1.ui.theme.LocalPaletaEstados
@@ -142,11 +142,15 @@ fun formatoMomento(millis: Long, ahora: Long = System.currentTimeMillis()): Stri
     return if (dia.format(Date(millis)) == dia.format(Date(ahora))) formatoHora(millis) else formatoFechaHora(millis)
 }
 
-// Se evalúa el valor ya redondeado como se muestra: "70 %" nunca sale en dos colores distintos
-fun estadoTemperatura(t: Double): EstadoGalpon = Umbrales.evaluar(Math.round(t * 10) / 10.0, HUMEDAD_NEUTRA)
-fun estadoHumedad(h: Double): EstadoGalpon = Umbrales.evaluar(TEMPERATURA_NEUTRA, Math.round(h).toDouble())
-private const val HUMEDAD_NEUTRA = 60.0
-private const val TEMPERATURA_NEUTRA = 23.0
+// Se evalúa el valor ya redondeado como se muestra: "70 %" nunca sale en dos colores distintos.
+// La otra variable se fija en el centro de su rango normal para aislar la que se colorea.
+fun estadoTemperatura(t: Double, u: ConfigUmbrales): EstadoGalpon =
+    u.evaluar(Math.round(t * 10) / 10.0, (u.humedadNormalMin + u.humedadNormalMax) / 2)
+fun estadoHumedad(h: Double, u: ConfigUmbrales): EstadoGalpon =
+    u.evaluar((u.tempNormalMin + u.tempNormalMax) / 2, Math.round(h).toDouble())
+
+/** Umbral para ejes y escalas: 28.0 → "28", 28.5 → "28,5". */
+fun cifraUmbral(valor: Double): String = cifra(valor, if (valor % 1.0 == 0.0) 0 else 1)
 
 /** Cada cifra se colorea según su propio umbral: así se ve si el problema es el calor o la humedad. */
 @Composable

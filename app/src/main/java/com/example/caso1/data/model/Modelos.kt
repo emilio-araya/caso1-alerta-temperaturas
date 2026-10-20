@@ -40,6 +40,40 @@ data class Alerta(
 )
 
 
+/**
+ * Umbrales que definen los estados del galpón. Para el MVP son ficticios y configurables
+ * (respuesta 1 del docente): se guardan en DataStore y se editan en "Configurar umbrales".
+ * Sobre el máximo normal → advertencia; sobre el máximo de advertencia → crítico;
+ * bajo el mínimo normal → advertencia. Los límites son inclusivos (28,0 °C sigue normal).
+ */
+data class ConfigUmbrales(
+    val tempNormalMin: Double = Umbrales.TEMP_NORMAL_MIN,
+    val tempNormalMax: Double = Umbrales.TEMP_NORMAL_MAX,
+    val tempAdvertenciaMax: Double = Umbrales.TEMP_ADVERTENCIA_MAX,
+    val humedadNormalMin: Double = Umbrales.HUMEDAD_NORMAL_MIN,
+    val humedadNormalMax: Double = Umbrales.HUMEDAD_NORMAL_MAX,
+    val humedadAdvertenciaMax: Double = Umbrales.HUMEDAD_ADVERTENCIA_MAX
+) {
+    fun evaluar(temperatura: Double, humedad: Double): EstadoGalpon = when {
+        temperatura > tempAdvertenciaMax || humedad > humedadAdvertenciaMax -> EstadoGalpon.CRITICO
+        temperatura > tempNormalMax || humedad > humedadNormalMax ||
+            temperatura < tempNormalMin || humedad < humedadNormalMin -> EstadoGalpon.ADVERTENCIA
+        else -> EstadoGalpon.NORMAL
+    }
+
+    /** Causa de la alerta: la condición que provoca el peor nivel, o null si todo es normal. */
+    fun causa(temperatura: Double, humedad: Double): String? = when {
+        temperatura > tempAdvertenciaMax -> "TEMPERATURA_ALTA"
+        humedad > humedadAdvertenciaMax -> "HUMEDAD_ALTA"
+        temperatura > tempNormalMax -> "TEMPERATURA_ALTA"
+        humedad > humedadNormalMax -> "HUMEDAD_ALTA"
+        temperatura < tempNormalMin -> "TEMPERATURA_BAJA"
+        humedad < humedadNormalMin -> "HUMEDAD_BAJA"
+        else -> null
+    }
+}
+
+/** Valores predeterminados de los umbrales (los que se restauran desde el formulario). */
 object Umbrales {
     const val TEMP_NORMAL_MIN = 18.0
     const val TEMP_NORMAL_MAX = 28.0
@@ -48,21 +82,9 @@ object Umbrales {
     const val HUMEDAD_NORMAL_MAX = 70.0
     const val HUMEDAD_ADVERTENCIA_MAX = 80.0
 
-    fun evaluar(temperatura: Double, humedad: Double): EstadoGalpon = when {
-        temperatura > TEMP_ADVERTENCIA_MAX || humedad > HUMEDAD_ADVERTENCIA_MAX -> EstadoGalpon.CRITICO
-        temperatura > TEMP_NORMAL_MAX || humedad > HUMEDAD_NORMAL_MAX ||
-            temperatura < TEMP_NORMAL_MIN || humedad < HUMEDAD_NORMAL_MIN -> EstadoGalpon.ADVERTENCIA
-        else -> EstadoGalpon.NORMAL
-    }
+    val PREDETERMINADOS = ConfigUmbrales()
 
-    /** Causa de la alerta: la condición que provoca el peor nivel, o null si todo es normal. */
-    fun causa(temperatura: Double, humedad: Double): String? = when {
-        temperatura > TEMP_ADVERTENCIA_MAX -> "TEMPERATURA_ALTA"
-        humedad > HUMEDAD_ADVERTENCIA_MAX -> "HUMEDAD_ALTA"
-        temperatura > TEMP_NORMAL_MAX -> "TEMPERATURA_ALTA"
-        humedad > HUMEDAD_NORMAL_MAX -> "HUMEDAD_ALTA"
-        temperatura < TEMP_NORMAL_MIN -> "TEMPERATURA_BAJA"
-        humedad < HUMEDAD_NORMAL_MIN -> "HUMEDAD_BAJA"
-        else -> null
-    }
+    fun evaluar(temperatura: Double, humedad: Double): EstadoGalpon = PREDETERMINADOS.evaluar(temperatura, humedad)
+
+    fun causa(temperatura: Double, humedad: Double): String? = PREDETERMINADOS.causa(temperatura, humedad)
 }

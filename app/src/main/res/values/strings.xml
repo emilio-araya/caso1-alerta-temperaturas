@@ -170,4 +170,27 @@
     <string name="notif_canal_desc">Eventos críticos de temperatura y humedad en los galpones</string>
     <string name="notif_titulo">Alerta roja · Galpón %1$d</string>
     <string name="notif_texto">%1$s. Toca para revisar y confirmar.</string>
+
+    <!-- Configurar umbrales -->
+    <string name="home_menu_umbrales">Configurar umbrales</string>
+    <string name="umbrales_titulo">Umbrales de alerta</string>
+    <string name="umbrales_explicacion">Umbrales ficticios y configurables para el MVP, definidos o validados por el docente. Sobre el máximo normal el galpón pasa a advertencia; sobre el máximo de advertencia, a crítico. Bajo el mínimo normal también es advertencia.</string>
+    <string name="umbrales_seccion_temperatura">Temperatura (°C)</string>
+    <string name="umbrales_seccion_humedad">Humedad relativa (%)</string>
+    <string name="umbrales_unidad_temperatura">°C</string>
+    <string name="umbrales_unidad_humedad">%</string>
+    <string name="umbrales_normal_min">Mínimo normal</string>
+    <string name="umbrales_normal_max">Máximo normal</string>
+    <string name="umbrales_advertencia_max">Máximo de advertencia</string>
+    <string name="umbrales_boton_guardar">Guardar umbrales</string>
+    <string name="umbrales_boton_restaurar">Restaurar valores predeterminados</string>
+    <string name="umbrales_guardados">Umbrales guardados. Estados y alertas recalculados.</string>
+    <string name="umbrales_restaurados">Valores predeterminados restaurados.</string>
+    <string name="umbrales_error_icono">Valor no válido</string>
+    <string name="umbrales_error_vacio">Ingresa un valor</string>
+    <string name="umbrales_error_numero">Ingresa un número (ej.: 28 o 28,5)</string>
+    <string name="umbrales_error_rango_temperatura">Debe estar entre -10 y 60 °C</string>
+    <string name="umbrales_error_rango_humedad">Debe estar entre 0 y 100 %</string>
+    <string name="umbrales_error_mayor_min">Debe ser mayor que el mínimo normal</string>
+    <string name="umbrales_error_mayor_max">Debe ser mayor que el máximo normal</string>
 </resources>

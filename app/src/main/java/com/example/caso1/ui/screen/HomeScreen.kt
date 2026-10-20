@@ -30,7 +30,7 @@ import com.example.caso1.data.local.GalponEntity
 import com.example.caso1.data.local.MedicionEntity
 import com.example.caso1.data.model.EstadoGalpon
 import com.example.caso1.data.model.Rol
-import com.example.caso1.data.model.Umbrales
+import com.example.caso1.data.model.ConfigUmbrales
 import com.example.caso1.ui.theme.EstiloCifra
 import com.example.caso1.ui.theme.EstiloEstado
 import com.example.caso1.viewmodel.Boletin
@@ -51,6 +51,7 @@ fun HomeScreen(
     onVerDetalle: (Int) -> Unit,
     onVerAlertas: () -> Unit,
     onRegistrar: (Int?) -> Unit,
+    onConfigurarUmbrales: () -> Unit,
     viewModel: HomeViewModel = viewModel(factory = HomeViewModel.Factory)
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
@@ -90,6 +91,14 @@ fun HomeScreen(
                             leadingIcon = { Icono(R.drawable.ic_cloud_off, null) },
                             trailingIcon = { Checkbox(checked = sinConexionDemo, onCheckedChange = null) },
                             onClick = { menuAbierto = false; viewModel.alternarSinConexion() }
+                        )
+                    }
+                    // Supervisor y jefatura ajustan los umbrales ficticios (respuesta 1 del docente)
+                    if (rol == Rol.SUPERVISOR || rol == Rol.JEFATURA) {
+                        DropdownMenuItem(
+                            text = { Text(stringResource(R.string.home_menu_umbrales)) },
+                            leadingIcon = { Icono(R.drawable.ic_thermostat, null) },
+                            onClick = { menuAbierto = false; onConfigurarUmbrales() }
                         )
                     }
                     DropdownMenuItem(
@@ -156,7 +165,7 @@ fun HomeScreen(
                     }
                 }
                 items(listado, key = { it.id }) { g ->
-                    TarjetaGalpon(g, state.ultimaPorGalpon[g.id], seleccionado = g.id == seleccionado) {
+                    TarjetaGalpon(g, state.ultimaPorGalpon[g.id], state.umbrales, seleccionado = g.id == seleccionado) {
                         onClickGalpon(g.id)
                     }
                 }
@@ -273,7 +282,9 @@ private fun Modifier.sangrado(margen: Dp) = layout { medible, restricciones ->
 }
 
 @Composable
-private fun TarjetaGalpon(galpon: GalponEntity, ultima: MedicionEntity?, seleccionado: Boolean, onClick: () -> Unit) {
+private fun TarjetaGalpon(
+    galpon: GalponEntity, ultima: MedicionEntity?, umbrales: ConfigUmbrales, seleccionado: Boolean, onClick: () -> Unit
+) {
     Card(
         onClick = onClick,
         modifier = Modifier.fillMaxWidth(),
@@ -292,7 +303,7 @@ private fun TarjetaGalpon(galpon: GalponEntity, ultima: MedicionEntity?, selecci
                         Icono(R.drawable.ic_water_drop, null, Modifier.size(16.dp), MaterialTheme.colorScheme.onSurfaceVariant)
                         Spacer(Modifier.width(4.dp))
                         Text(stringResource(R.string.humedad_etiqueta, cifra(it.humedad, 0)), style = EstiloCifra,
-                            color = colorCifra(estadoHumedad(it.humedad), MaterialTheme.colorScheme.onSurfaceVariant))
+                            color = colorCifra(estadoHumedad(it.humedad, umbrales), MaterialTheme.colorScheme.onSurfaceVariant))
                     }
                 }
             }
@@ -300,12 +311,12 @@ private fun TarjetaGalpon(galpon: GalponEntity, ultima: MedicionEntity?, selecci
                 Text(
                     stringResource(R.string.valor_temperatura_corta, cifra(it.temperatura)),
                     style = MaterialTheme.typography.displaySmall,
-                    color = colorCifra(estadoTemperatura(it.temperatura))
+                    color = colorCifra(estadoTemperatura(it.temperatura, umbrales))
                 )
             }
         }
         ultima?.let {
-            EscalaTermica(it.temperatura, Modifier.padding(start = 16.dp, end = 16.dp, top = 6.dp, bottom = 12.dp))
+            EscalaTermica(it.temperatura, umbrales, Modifier.padding(start = 16.dp, end = 16.dp, top = 6.dp, bottom = 12.dp))
         } ?: Spacer(Modifier.height(16.dp))
     }
 }

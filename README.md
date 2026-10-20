@@ -24,7 +24,7 @@ persistencia local (offline) y notificaciones.
 | F10 | Consumo de la API del sistema de monitoreo con Retrofit (JSON), deslizar para actualizar | Todos |
 | F9 | Diseño adaptable con Window Size Classes (1 columna / 2 columnas / lista + detalle; barra inferior o riel lateral) | Todos |
 
-**Umbrales** (`Umbrales` en `data/model/Modelos.kt`):
+**Umbrales** (valores predeterminados de `ConfigUmbrales` en `data/model/Modelos.kt`). Son ficticios y configurables (respuesta 1 del docente): supervisor y jefatura los editan en el menú ⋮ → *Configurar umbrales* (formulario validado), se guardan en DataStore (`umbrales`) y el dispositivo evalúa con ellos el estado y las alertas de cada galpón a partir de su última medición. Los umbrales de `mock-api` solo simulan el servidor.
 
 | Estado | Temperatura | Humedad |
 |--------|-------------|---------|

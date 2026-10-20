@@ -26,6 +26,10 @@ class RepositorioFalso(galponesIniciales: List<GalponEntity> = emptyList()) : Re
     var proximoResultado: ResultadoSincronizacion = ResultadoSincronizacion.Correcto(emptyList())
     var vecesRefrescado = 0
 
+    /** Lo que devolverá el próximo reevaluar(). */
+    var proximasCriticasReevaluadas: List<AlertaEntity> = emptyList()
+    var vecesReevaluado = 0
+
     override val galpones = MutableStateFlow(galponesIniciales)
     override val alertasActivas: Flow<List<AlertaEntity>> = MutableStateFlow(emptyList())
     override val alertas: Flow<List<AlertaEntity>> = MutableStateFlow(emptyList())
@@ -40,6 +44,11 @@ class RepositorioFalso(galponesIniciales: List<GalponEntity> = emptyList()) : Re
         estadoConexion.value = if (proximoResultado is ResultadoSincronizacion.Correcto) EstadoConexion.EN_LINEA
             else EstadoConexion.SIN_CONEXION
         return proximoResultado
+    }
+
+    override suspend fun reevaluar(): List<AlertaEntity> {
+        vecesReevaluado++
+        return proximasCriticasReevaluadas
     }
 
     override suspend fun simularPicoDeCalor(): Int? = null

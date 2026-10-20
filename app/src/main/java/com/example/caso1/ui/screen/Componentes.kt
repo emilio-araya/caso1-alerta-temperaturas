@@ -31,7 +31,7 @@ import androidx.compose.ui.unit.dp
 import com.example.caso1.R
 import com.example.caso1.data.model.EstadoGalpon
 import com.example.caso1.data.model.Rol
-import com.example.caso1.data.model.Umbrales
+import com.example.caso1.data.model.ConfigUmbrales
 import com.example.caso1.data.repository.EstadoConexion
 import com.example.caso1.ui.navigation.AppRoutes
 import com.example.caso1.viewmodel.EstadoRed
@@ -75,7 +75,7 @@ private const val ESCALA_MAX = 38.0
  * Todas las tarjetas usan la misma escala, así se comparan galpones de un vistazo.
  */
 @Composable
-fun EscalaTermica(temperatura: Double, modifier: Modifier = Modifier) {
+fun EscalaTermica(temperatura: Double, umbrales: ConfigUmbrales, modifier: Modifier = Modifier) {
     val paleta = com.example.caso1.ui.theme.LocalPaletaEstados.current
     val marca = MaterialTheme.colorScheme.onSurface
     val fondo = MaterialTheme.colorScheme.surfaceContainerLowest
@@ -83,10 +83,10 @@ fun EscalaTermica(temperatura: Double, modifier: Modifier = Modifier) {
     val estiloEje = MaterialTheme.typography.labelSmall.copy(color = textoEje)
     val medidor = rememberTextMeasurer()
     val zonas = listOf(
-        ESCALA_MIN to Umbrales.TEMP_NORMAL_MIN to paleta.advertencia.franja,
-        Umbrales.TEMP_NORMAL_MIN to Umbrales.TEMP_NORMAL_MAX to paleta.normal.franja,
-        Umbrales.TEMP_NORMAL_MAX to Umbrales.TEMP_ADVERTENCIA_MAX to paleta.advertencia.franja,
-        Umbrales.TEMP_ADVERTENCIA_MAX to ESCALA_MAX to paleta.critico.franja
+        ESCALA_MIN to umbrales.tempNormalMin to paleta.advertencia.franja,
+        umbrales.tempNormalMin to umbrales.tempNormalMax to paleta.normal.franja,
+        umbrales.tempNormalMax to umbrales.tempAdvertenciaMax to paleta.advertencia.franja,
+        umbrales.tempAdvertenciaMax to ESCALA_MAX to paleta.critico.franja
     )
     val descripcion = stringResource(R.string.escala_descripcion, cifra(temperatura))
 
@@ -99,9 +99,9 @@ fun EscalaTermica(temperatura: Double, modifier: Modifier = Modifier) {
             drawRect(color, Offset(x(desde), top), Size(x(hasta) - x(desde), alto))
         }
         // Separaciones finas entre zonas
-        listOf(Umbrales.TEMP_NORMAL_MIN, Umbrales.TEMP_NORMAL_MAX, Umbrales.TEMP_ADVERTENCIA_MAX).forEach { t ->
+        listOf(umbrales.tempNormalMin, umbrales.tempNormalMax, umbrales.tempAdvertenciaMax).forEach { t ->
             drawRect(fondo, Offset(x(t) - 1f, top), Size(2f, alto))
-            val etiqueta = medidor.measure("${t.toInt()}°", estiloEje)
+            val etiqueta = medidor.measure("${cifraUmbral(t)}°", estiloEje)
             drawText(etiqueta, topLeft = Offset(x(t) - etiqueta.size.width / 2f, top + alto + 3.dp.toPx()))
         }
         // Marca de la lectura actual: triángulo sobre la barra y línea que la cruza

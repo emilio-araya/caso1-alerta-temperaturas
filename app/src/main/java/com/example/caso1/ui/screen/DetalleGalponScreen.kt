@@ -25,7 +25,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.caso1.R
 import com.example.caso1.data.local.MedicionEntity
-import com.example.caso1.data.model.Umbrales
+import com.example.caso1.data.model.ConfigUmbrales
 import com.example.caso1.ui.theme.EstiloCifra
 import com.example.caso1.ui.theme.EstiloEstado
 import com.example.caso1.ui.theme.LocalPaletaEstados
@@ -73,7 +73,7 @@ fun DetalleContenido(state: DetalleUiState, modifier: Modifier = Modifier, onReg
                     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLowest),
                     border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
                 ) {
-                    GraficoTemperatura(mediciones.reversed(), Modifier.padding(12.dp))
+                    GraficoTemperatura(mediciones.reversed(), state.umbrales, Modifier.padding(12.dp))
                 }
                 if (onRegistrar != null) {
                     Spacer(Modifier.height(16.dp))
@@ -92,7 +92,7 @@ fun DetalleContenido(state: DetalleUiState, modifier: Modifier = Modifier, onReg
                 Spacer(Modifier.height(8.dp))
                 FilaTabla(
                     stringResource(R.string.detalle_col_hora), stringResource(R.string.detalle_col_temp),
-                    stringResource(R.string.detalle_col_humedad), encabezado = true
+                    stringResource(R.string.detalle_col_humedad), state.umbrales, encabezado = true
                 )
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
             }
@@ -103,6 +103,7 @@ fun DetalleContenido(state: DetalleUiState, modifier: Modifier = Modifier, onReg
                     formatoHora(m.fechaHora),
                     stringResource(R.string.valor_temperatura, cifra(m.temperatura)),
                     stringResource(R.string.valor_humedad, cifra(m.humedad, 0)),
+                    state.umbrales,
                     medicion = m
                 )
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
@@ -116,7 +117,7 @@ fun DetalleContenido(state: DetalleUiState, modifier: Modifier = Modifier, onReg
 private fun PlacaEstado(ultima: MedicionEntity, state: DetalleUiState) {
     val estado = state.estado ?: return
     val c = estado.colores()
-    val causa = Umbrales.causa(ultima.temperatura, ultima.humedad)
+    val causa = state.umbrales.causa(ultima.temperatura, ultima.humedad)
     Surface(color = c.franja, contentColor = c.sobreFranja) {
         Column(Modifier.fillMaxWidth().padding(16.dp)) {
             Text(
@@ -139,25 +140,28 @@ private fun PlacaEstado(ultima: MedicionEntity, state: DetalleUiState) {
 }
 
 @Composable
-private fun FilaTabla(hora: String, temp: String, humedad: String, encabezado: Boolean = false, medicion: MedicionEntity? = null) {
+private fun FilaTabla(
+    hora: String, temp: String, humedad: String, umbrales: ConfigUmbrales,
+    encabezado: Boolean = false, medicion: MedicionEntity? = null
+) {
     val estilo = if (encabezado) MaterialTheme.typography.labelMedium else EstiloCifra
     val tenue = MaterialTheme.colorScheme.onSurfaceVariant
     Row(Modifier.fillMaxWidth().heightIn(min = 40.dp).padding(vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
         Text(hora, style = estilo, color = tenue, modifier = Modifier.weight(1f))
         Text(
             temp, style = estilo, textAlign = TextAlign.End, modifier = Modifier.weight(1f),
-            color = if (encabezado || medicion == null) tenue else colorCifra(estadoTemperatura(medicion.temperatura))
+            color = if (encabezado || medicion == null) tenue else colorCifra(estadoTemperatura(medicion.temperatura, umbrales))
         )
         Text(
             humedad, style = estilo, textAlign = TextAlign.End, modifier = Modifier.weight(1f),
-            color = if (encabezado || medicion == null) tenue else colorCifra(estadoHumedad(medicion.humedad))
+            color = if (encabezado || medicion == null) tenue else colorCifra(estadoHumedad(medicion.humedad, umbrales))
         )
         // Estado de la lectura completa (temperatura y humedad juntas), igual que el galpón
         Row(Modifier.weight(1f), horizontalArrangement = Arrangement.End, verticalAlignment = Alignment.CenterVertically) {
             if (medicion == null) {
                 Text(stringResource(R.string.detalle_col_estado), style = estilo, color = tenue)
             } else {
-                val e = Umbrales.evaluar(medicion.temperatura, medicion.humedad)
+                val e = umbrales.evaluar(medicion.temperatura, medicion.humedad)
                 MarcaEstado(e)
                 Spacer(Modifier.width(6.dp))
                 Text(e.etiquetaCorta(), style = MaterialTheme.typography.labelMedium, color = colorCifra(e, tenue))
@@ -177,7 +181,7 @@ private fun rangoCubierto(mediciones: List<MedicionEntity>): String {
 
 /** Gráfico de línea con las zonas de los umbrales sombreadas y la última lectura marcada. */
 @Composable
-private fun GraficoTemperatura(cronologicas: List<MedicionEntity>, modifier: Modifier = Modifier) {
+private fun GraficoTemperatura(cronologicas: List<MedicionEntity>, umbrales: ConfigUmbrales, modifier: Modifier = Modifier) {
     if (cronologicas.size < 2) return
     val paleta = LocalPaletaEstados.current
     val linea = MaterialTheme.colorScheme.primary
@@ -185,11 +189,13 @@ private fun GraficoTemperatura(cronologicas: List<MedicionEntity>, modifier: Mod
     val estiloEje = MaterialTheme.typography.labelSmall.copy(color = MaterialTheme.colorScheme.onSurfaceVariant)
     val medidor = rememberTextMeasurer()
     val temps = cronologicas.map { it.temperatura }
-    // Rango ajustado a los datos, pero siempre mostrando las líneas de 28 °C y 32 °C
-    val min = minOf(temps.min(), Umbrales.TEMP_NORMAL_MAX) - 1.5
-    val max = maxOf(temps.max(), Umbrales.TEMP_ADVERTENCIA_MAX) + 1.5
+    val normalMax = umbrales.tempNormalMax
+    val advertenciaMax = umbrales.tempAdvertenciaMax
+    // Rango ajustado a los datos, pero siempre mostrando las líneas de los dos umbrales altos
+    val min = minOf(temps.min(), normalMax) - 1.5
+    val max = maxOf(temps.max(), advertenciaMax) + 1.5
     val ultima = temps.last()
-    val colorUltima = estadoTemperatura(ultima).let { paleta.de(it).franja }
+    val colorUltima = estadoTemperatura(ultima, umbrales).let { paleta.de(it).franja }
     val descripcion = stringResource(R.string.detalle_grafico_descripcion, cifra(temps.first()), cifra(ultima))
 
     Canvas(modifier.fillMaxWidth().height(190.dp).semantics { contentDescription = descripcion }) {
@@ -200,16 +206,16 @@ private fun GraficoTemperatura(cronologicas: List<MedicionEntity>, modifier: Mod
         fun y(t: Double) = (alto * (1 - (t - min) / (max - min))).toFloat()
         val paso = ancho / (temps.size - 1)
 
-        // Zonas: amarilla entre 28 y 32 °C, roja sobre 32 °C
-        drawRect(paleta.advertencia.franja.copy(alpha = 0.14f), Offset(0f, y(Umbrales.TEMP_ADVERTENCIA_MAX)),
-            Size(ancho, y(Umbrales.TEMP_NORMAL_MAX) - y(Umbrales.TEMP_ADVERTENCIA_MAX)))
-        drawRect(paleta.critico.franja.copy(alpha = 0.10f), Offset(0f, 0f), Size(ancho, y(Umbrales.TEMP_ADVERTENCIA_MAX)))
+        // Zonas: amarilla entre el máximo normal y el de advertencia, roja sobre este último
+        drawRect(paleta.advertencia.franja.copy(alpha = 0.14f), Offset(0f, y(advertenciaMax)),
+            Size(ancho, y(normalMax) - y(advertenciaMax)))
+        drawRect(paleta.critico.franja.copy(alpha = 0.10f), Offset(0f, 0f), Size(ancho, y(advertenciaMax)))
 
         val punteada = PathEffect.dashPathEffect(floatArrayOf(10f, 8f))
-        listOf(Umbrales.TEMP_NORMAL_MAX to paleta.advertencia.franja, Umbrales.TEMP_ADVERTENCIA_MAX to paleta.critico.franja)
+        listOf(normalMax to paleta.advertencia.franja, advertenciaMax to paleta.critico.franja)
             .forEach { (umbral, color) ->
                 drawLine(color, Offset(0f, y(umbral)), Offset(ancho, y(umbral)), strokeWidth = 2f, pathEffect = punteada)
-                val t = medidor.measure("${umbral.toInt()}°", estiloEje)
+                val t = medidor.measure("${cifraUmbral(umbral)}°", estiloEje)
                 drawText(t, topLeft = Offset(ancho + 6.dp.toPx(), y(umbral) - t.size.height / 2f))
             }
 

@@ -11,7 +11,10 @@ import com.example.caso1.data.local.AlertaEntity
 import com.example.caso1.data.local.DatosMonitoreo
 import com.example.caso1.data.local.EventoEntity
 import com.example.caso1.data.local.MedicionEntity
+import com.example.caso1.data.local.UmbralesRepository
 import com.example.caso1.data.local.crearAlmacenMonitoreo
+import com.example.caso1.data.local.crearAlmacenUmbrales
+import com.example.caso1.data.model.ConfigUmbrales
 import com.example.caso1.data.model.EstadoGalpon
 import com.example.caso1.data.model.NivelAlerta
 import com.example.caso1.data.model.Rol
@@ -42,7 +45,7 @@ import java.io.IOException
 /**
  * GalponRepository over a real DataStore file (no emulator): offline single source of truth,
  * all-or-nothing sync, one active alert per shed, only new critical alerts reported,
- * measurement upsert, 24 h retention, confirmation and persistence across restarts.
+ * alerts derived on the device from the newest reading, re-evaluation with new thresholds, measurement upsert, 24 h retention, confirmation and persistence across restarts.
  */
 class GalponRepositoryTest {
 
@@ -57,24 +60,28 @@ class GalponRepositoryTest {
         var falla: (() -> Nothing)? = null
         var galpones = listOf(GalponDto(1, "Granja Norte", "Galpón 1", "CRITICO"))
         var mediciones = mapOf(1 to listOf(MedicionDto(1, temperatura = 33.5, humedad = 60.0, fechaHora = ahora)))
-        var alertas = listOf(AlertaDto(1, "TEMPERATURA_ALTA", "CRITICO", ahora))
+        var llamadas = 0
 
         override suspend fun galpones(): List<GalponDto> {
+            llamadas++
             falla?.invoke()
             return galpones
         }
 
-        override suspend fun mediciones(galponId: Int) = mediciones[galponId].orEmpty()
-        override suspend fun alertasActivas() = alertas
+        override suspend fun mediciones(galponId: Int): List<MedicionDto> {
+            llamadas++
+            return mediciones[galponId].orEmpty()
+        }
+
+        // The device derives alerts from measurements: the server's alert list is not used
+        override suspend fun alertasActivas(): List<AlertaDto> = error("alertas/activas must not be called")
         override suspend fun simularPicoDeCalor() = SimulacionDto(1)
     }
 
     /** One store per file at a time (DataStore rule); its scope is cancelled to release the file. */
-    private fun abrirAlmacen(): DataStore<DatosMonitoreo> {
-        val alcance = CoroutineScope(Dispatchers.IO + Job())
-        alcances += alcance
-        return crearAlmacenMonitoreo(archivo, alcance)
-    }
+    private fun nuevoAlcance(): CoroutineScope = CoroutineScope(Dispatchers.IO + Job()).also { alcances += it }
+
+    private fun abrirAlmacen(): DataStore<DatosMonitoreo> = crearAlmacenMonitoreo(archivo, nuevoAlcance())
 
     private fun cerrarAlmacenes() = runBlocking {
         alcances.forEach { it.coroutineContext.job.cancelAndJoin() }
@@ -146,9 +153,9 @@ class GalponRepositoryTest {
         reloj = ahora + 1_000
         repo.confirmarAlerta(alerta.id, 1, Rol.SUPERVISOR, "Confirmada")
 
-        // Same tipo and nivel, newer timestamp: the stored alert must stay untouched
+        // Same tipo and nivel, newer reading: the stored alert must stay untouched
         reloj = ahora + 60_000
-        api.alertas = listOf(AlertaDto(1, "TEMPERATURA_ALTA", "CRITICO", ahora + 60_000))
+        api.mediciones = mapOf(1 to listOf(MedicionDto(1, 34.0, 60.0, ahora + 60_000)))
         val r = repo.refrescar()
 
         assertEquals(ResultadoSincronizacion.Correcto(emptyList()), r)
@@ -159,12 +166,12 @@ class GalponRepositoryTest {
 
     @Test fun cambioDeNivelReemplazaLaAlertaYNotificaSoloUnaVez() = runBlocking {
         val api = ApiControlada(ahora).apply {
-            alertas = listOf(AlertaDto(1, "TEMPERATURA_ALTA", "ADVERTENCIA", ahora))
+            mediciones = mapOf(1 to listOf(MedicionDto(1, 30.0, 60.0, ahora)))   // ADVERTENCIA
         }
         val repo = GalponRepository(abrirAlmacen(), api, reloj = { ahora })
         assertEquals(ResultadoSincronizacion.Correcto(emptyList()), repo.refrescar())
 
-        api.alertas = listOf(AlertaDto(1, "TEMPERATURA_ALTA", "CRITICO", ahora + 5))
+        api.mediciones = mapOf(1 to listOf(MedicionDto(1, 33.5, 60.0, ahora + 5)))   // CRITICO
         val nueva = AlertaEntity(2, 1, "TEMPERATURA_ALTA", NivelAlerta.CRITICO, true, ahora + 5)
         assertEquals(ResultadoSincronizacion.Correcto(listOf(nueva)), repo.refrescar())
 
@@ -180,20 +187,59 @@ class GalponRepositoryTest {
     @Test fun galponNormalizadoDesactivaSuAlertaYLosAusentesLaConservan() = runBlocking {
         val api = ApiControlada(ahora).apply {
             galpones = listOf(GalponDto(1, "Granja Norte", "Galpón 1", "CRITICO"), GalponDto(2, "Granja Sur", "Galpón 2", "CRITICO"))
-            alertas = listOf(AlertaDto(1, "TEMPERATURA_ALTA", "CRITICO", ahora), AlertaDto(2, "HUMEDAD_ALTA", "CRITICO", ahora - 1))
+            mediciones = mapOf(
+                1 to listOf(MedicionDto(1, 33.5, 60.0, ahora)),
+                2 to listOf(MedicionDto(2, 24.0, 85.0, ahora - 1))   // HUMEDAD_ALTA crítica
+            )
         }
         val repo = GalponRepository(abrirAlmacen(), api, reloj = { ahora })
         val primera = repo.refrescar() as ResultadoSincronizacion.Correcto
-        assertEquals(listOf(1, 2), primera.nuevasCriticas.map { it.id })
+        assertEquals(listOf(1 to "TEMPERATURA_ALTA", 2 to "HUMEDAD_ALTA"), primera.nuevasCriticas.map { it.galponId to it.tipo })
 
         // Shed 1 back to normal; shed 2 missing from this download keeps its alert
         api.galpones = listOf(GalponDto(1, "Granja Norte", "Galpón 1", "NORMAL"))
-        api.alertas = emptyList()
+        api.mediciones = mapOf(1 to listOf(MedicionDto(1, 24.0, 60.0, ahora + 1)))
         assertEquals(ResultadoSincronizacion.Correcto(emptyList()), repo.refrescar())
 
         assertEquals(listOf(2), repo.alertasActivas.first().map { it.galponId })
         assertEquals(listOf(1 to false, 2 to true), repo.alertas.first().map { it.galponId to it.activa })
         assertEquals(listOf(EstadoGalpon.NORMAL, EstadoGalpon.CRITICO), repo.galpones.first().map { it.estado })
+    }
+
+    @Test fun estadoYAlertaSalenDeLaUltimaMedicionNoDelServidor() = runBlocking {
+        val api = ApiControlada(ahora).apply {
+            galpones = listOf(GalponDto(1, "Granja Norte", "Galpón 1", "NORMAL"))   // server state is ignored
+            mediciones = mapOf(1 to listOf(MedicionDto(1, 33.5, 60.0, ahora - 5), MedicionDto(1, 24.0, 75.0, ahora)))
+        }
+        val repo = GalponRepository(abrirAlmacen(), api, reloj = { ahora })
+
+        assertEquals(ResultadoSincronizacion.Correcto(emptyList()), repo.refrescar())
+
+        assertEquals(EstadoGalpon.ADVERTENCIA, repo.galpones.first().single().estado)
+        assertEquals(listOf(AlertaEntity(1, 1, "HUMEDAD_ALTA", NivelAlerta.ADVERTENCIA, true, ahora)), repo.alertas.first())
+    }
+
+    @Test fun nuevosUmbralesReevaluanSinConexion() = runBlocking {
+        val umbrales = UmbralesRepository(crearAlmacenUmbrales(File(carpeta.root, "umbrales.preferences_pb"), nuevoAlcance()))
+        val api = ApiControlada(ahora).apply { mediciones = mapOf(1 to listOf(MedicionDto(1, 30.0, 60.0, ahora))) }
+        val repo = GalponRepository(abrirAlmacen(), api, umbrales.umbrales, reloj = { ahora })
+        repo.refrescar()
+        assertEquals(EstadoGalpon.ADVERTENCIA, repo.galpones.first().single().estado)
+
+        // The supervisor lowers the critical limit while offline
+        api.falla = { throw IOException("sin red") }
+        val llamadasAntes = api.llamadas
+        umbrales.guardar(ConfigUmbrales(tempAdvertenciaMax = 29.0))
+        val nuevas = repo.reevaluar()
+
+        assertEquals(llamadasAntes, api.llamadas)   // no API call
+        val critica = AlertaEntity(2, 1, "TEMPERATURA_ALTA", NivelAlerta.CRITICO, true, ahora)
+        assertEquals(listOf(critica), nuevas)
+        assertEquals(EstadoGalpon.CRITICO, repo.galpones.first().single().estado)
+        assertEquals(listOf(critica), repo.alertasActivas.first())
+        assertEquals(listOf(2 to true, 1 to false), repo.alertas.first().map { it.id to it.activa })
+        // Same thresholds again: nothing new
+        assertEquals(emptyList<AlertaEntity>(), repo.reevaluar())
     }
 
     // --- Measurements ---
@@ -225,7 +271,6 @@ class GalponRepositoryTest {
                 ),
                 2 to listOf(MedicionDto(2, 29.0, 60.0, ahora - 10))
             )
-            alertas = emptyList()
         }
         val repo = GalponRepository(abrirAlmacen(), api, reloj = { ahora })
         repo.refrescar()
@@ -233,7 +278,7 @@ class GalponRepositoryTest {
         assertEquals(listOf(ahora, limite), repo.mediciones(1).first().map { it.fechaHora })
         assertEquals(listOf(ahora - 10), repo.mediciones(2).first().map { it.fechaHora })
         assertEquals(listOf(1 to ahora, 2 to ahora - 10), repo.ultimasMediciones.first().map { it.galponId to it.fechaHora }.sortedBy { it.first })
-        // Unknown server state: computed from the newest reading with the thresholds
+        // State always comes from the newest reading evaluated on the device
         assertEquals(listOf(EstadoGalpon.CRITICO, EstadoGalpon.ADVERTENCIA), repo.galpones.first().map { it.estado })
     }
 

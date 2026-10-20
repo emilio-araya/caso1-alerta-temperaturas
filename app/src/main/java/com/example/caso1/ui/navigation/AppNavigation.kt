@@ -83,9 +83,11 @@ fun AppNavigation(
                 },
                 onVerDetalle = { id -> navController.navigate(AppRoutes.detalle(id)) },
                 onVerAlertas = { irA(Destino.ALERTAS) },
-                onRegistrar = { id -> navController.navigate(AppRoutes.registrar(id)) }
+                onRegistrar = { id -> navController.navigate(AppRoutes.registrar(id)) },
+                onConfigurarUmbrales = { navController.navigate(AppRoutes.UMBRALES) }
             )
         }
+        composable(AppRoutes.UMBRALES) { UmbralesScreen(onBack = { navController.popBackStack() }) }
         composable(AppRoutes.ALERTAS) { AlertasScreen(marco) }
         composable(AppRoutes.HISTORIAL) { HistorialScreen(marco) }
 

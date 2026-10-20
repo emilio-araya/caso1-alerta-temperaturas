@@ -8,6 +8,7 @@ object AppRoutes {
     const val REGISTRAR = "registrar?galponId={galponId}"
     const val CONFIRMAR = "confirmar"
     const val HISTORIAL = "historial"
+    const val UMBRALES = "umbrales"
 
     fun detalle(galponId: Int) = "detalle/$galponId"
 

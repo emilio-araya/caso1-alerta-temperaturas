@@ -83,7 +83,7 @@ Se recomienda permitir a las jefaturas consultar alertas, mediciones y acciones 
 
 | # | En la app | Estado |
 |---|-----------|--------|
-| 1 | Umbrales ficticios guardados en DataStore y editables desde un formulario validado | Pendiente |
+| 1 | Umbrales ficticios guardados en DataStore (`umbrales`) y editables desde un formulario validado: menú ⋮ → Configurar umbrales (supervisor y jefatura); el dispositivo evalúa estados y alertas con ellos | Hecho |
 | 2 | Advertencia: recomendación de revisar ventilación. Crítico: alerta prioritaria, notificación y registro de acción correctiva | Pendiente |
 | 3 | °C y % con fecha y hora de medición; semáforo de colores con texto | Pendiente |
 | 4 | Notificaciones solo para operario y supervisor; jefatura consulta el panel | Pendiente |

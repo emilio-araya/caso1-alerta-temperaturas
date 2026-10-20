@@ -9,6 +9,7 @@ import androidx.lifecycle.viewmodel.viewModelFactory
 import com.example.caso1.contenedor
 import com.example.caso1.data.local.GalponEntity
 import com.example.caso1.data.local.MedicionEntity
+import com.example.caso1.data.model.ConfigUmbrales
 import com.example.caso1.data.model.EstadoGalpon
 import com.example.caso1.data.model.Umbrales
 import com.example.caso1.data.repository.RepositorioGalpones
@@ -19,7 +20,8 @@ data class DetalleUiState(
     val galponId: Int = 0,
     val galpon: GalponEntity? = null,
     val mediciones: List<MedicionEntity> = emptyList(),   // de la más reciente a la más antigua
-    val estado: EstadoGalpon? = null
+    val estado: EstadoGalpon? = null,
+    val umbrales: ConfigUmbrales = Umbrales.PREDETERMINADOS   // los configurados, para causa, colores y gráfico
 ) {
     val ultima: MedicionEntity? get() = mediciones.firstOrNull()
 }
@@ -32,18 +34,20 @@ data class DetalleUiState(
 @OptIn(ExperimentalCoroutinesApi::class)
 class DetalleViewModel(
     private val repo: RepositorioGalpones,
-    private val savedState: SavedStateHandle
+    private val savedState: SavedStateHandle,
+    private val umbrales: Flow<ConfigUmbrales> = flowOf(Umbrales.PREDETERMINADOS)
 ) : ViewModel() {
     private val galponId = savedState.getStateFlow(CLAVE_GALPON, 0)
 
     val uiState: StateFlow<DetalleUiState> = galponId
         .flatMapLatest { id ->
-            combine(repo.mediciones(id), repo.galpones) { lista, galpones ->
+            combine(repo.mediciones(id), repo.galpones, umbrales) { lista, galpones, config ->
                 DetalleUiState(
                     galponId = id,
                     galpon = galpones.firstOrNull { it.id == id },
                     mediciones = lista,
-                    estado = lista.firstOrNull()?.let { Umbrales.evaluar(it.temperatura, it.humedad) }
+                    estado = lista.firstOrNull()?.let { config.evaluar(it.temperatura, it.humedad) },
+                    umbrales = config
                 )
             }
         }
@@ -55,7 +59,7 @@ class DetalleViewModel(
         private const val CLAVE_GALPON = "galponId"
 
         val Factory = viewModelFactory {
-            initializer { DetalleViewModel(contenedor().repositorio, createSavedStateHandle()) }
+            initializer { DetalleViewModel(contenedor().repositorio, createSavedStateHandle(), contenedor().umbrales.umbrales) }
         }
     }
 }

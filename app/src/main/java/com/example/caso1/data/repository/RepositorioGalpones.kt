@@ -36,6 +36,9 @@ interface RepositorioGalpones {
     /** Descarga de la API y guarda en DataStore. Nunca lanza por falta de red. */
     suspend fun refrescar(): ResultadoSincronizacion
 
+    /** Recalcula estados y alertas con los umbrales actuales, sin red. Devuelve las críticas nuevas. */
+    suspend fun reevaluar(): List<AlertaEntity>
+
     /** Modo demo: pide al servidor un pico de calor. Devuelve el galpón afectado, o null sin conexión. */
     suspend fun simularPicoDeCalor(): Int?
 

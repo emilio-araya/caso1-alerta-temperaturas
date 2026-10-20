@@ -4,7 +4,7 @@ import kotlinx.serialization.Serializable
 
 /*
  * DTO (Data Transfer Object): la forma exacta del JSON que viaja por la red.
- * Se mantienen separados de las entidades de Room: si el servidor cambia un
+ * Se mantienen separados de los registros guardados en DataStore: si el servidor cambia un
  * campo, solo cambia el DTO y su conversión en el repositorio.
  */
 

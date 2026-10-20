@@ -13,6 +13,9 @@ import kotlin.random.Random
  * Los datos son deterministas: cada medición depende solo del galpón y del
  * intervalo de tiempo, así todas las llamadas (estado, alertas, historial)
  * ven exactamente los mismos valores, igual que un servidor real.
+ *
+ * Usa sus propios umbrales fijos ([Umbrales]) solo para simular el servidor: la app
+ * recalcula el estado y las alertas con los umbrales configurados en el dispositivo.
  */
 object MockMonitorApi {
 

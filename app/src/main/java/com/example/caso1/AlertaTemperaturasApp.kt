@@ -12,6 +12,9 @@ import com.example.caso1.data.api.InterceptorConectividad
 import com.example.caso1.data.api.MonitorApi
 import com.example.caso1.data.api.ServidorSimulado
 import com.example.caso1.data.local.AlertaEntity
+import com.example.caso1.data.local.RepositorioUmbrales
+import com.example.caso1.data.local.UmbralesRepository
+import com.example.caso1.data.local.almacenUmbrales
 import com.example.caso1.data.local.datosMonitoreo
 import com.example.caso1.data.repository.GalponRepository
 import com.example.caso1.data.repository.RepositorioGalpones
@@ -47,7 +50,10 @@ class ContenedorApp(contexto: Context) {
         }
     }
 
-    val repositorio: RepositorioGalpones by lazy { GalponRepository(app.datosMonitoreo, api) }
+    /** Umbrales configurables (DataStore "umbrales"); el repositorio los usa para evaluar cada galpón. */
+    val umbrales: RepositorioUmbrales by lazy { UmbralesRepository(app.almacenUmbrales) }
+
+    val repositorio: RepositorioGalpones by lazy { GalponRepository(app.datosMonitoreo, api, umbrales.umbrales) }
     val sesion: SessionManager by lazy { SessionManager(app) }
 
     /** Acciones que necesitan Context, envueltas para que el ViewModel no lo conozca. */
