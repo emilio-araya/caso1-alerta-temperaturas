@@ -23,6 +23,8 @@ persistencia local (offline) y notificaciones.
 | F8 | Funciona sin conexión: la UI siempre lee de DataStore; aviso "Sin conexión" con la hora de los datos y reconexión automática | Todos |
 | F10 | Consumo de la API del sistema de monitoreo con Retrofit (JSON), deslizar para actualizar | Todos |
 | F9 | Diseño adaptable con Window Size Classes (1 columna / 2 columnas / lista + detalle; barra inferior o riel lateral) | Todos |
+| F11 | Qué hacer según el estado en el detalle y en cada alerta (advertencia: revisar ventilación; crítico: alerta prioritaria y botón *Registrar acción correctiva*). Las notificaciones llegan solo a operario y supervisor; la jefatura consulta el panel | Todos (registra el operario) |
+| F12 | Simular medición: formulario validado (galpón, °C y %) con vista previa del estado; la lectura ficticia se guarda en DataStore y se evalúa en el teléfono, también sin conexión | Todos |
 
 **Umbrales** (valores predeterminados de `ConfigUmbrales` en `data/model/Modelos.kt`). Son ficticios y configurables (respuesta 1 del docente): supervisor y jefatura los editan en el menú ⋮ → *Configurar umbrales* (formulario validado), se guardan en DataStore (`umbrales`) y el dispositivo evalúa con ellos el estado y las alertas de cada galpón a partir de su última medición. Los umbrales de `mock-api` solo simulan el servidor.
 
@@ -100,10 +102,16 @@ cd mock-api && npm test   # endpoints y umbrales de la API simulada
 
 ## Guion de demo
 
-Las opciones *Simular…* del menú ⋮ solo aparecen en la versión **debug** (la que instala Android Studio); la versión release no las incluye.
+Las opciones *Simular pico de calor* y *Simular sin conexión* del menú ⋮ solo aparecen en la versión **debug** (la que instala Android Studio). *Simular medición* está en todas las versiones y perfiles.
+
+0. **Simular medición** (respuesta 5 del docente): menú ⋮ → *Simular medición* → elegir galpón,
+   escribir 35 °C y 60 % (la vista previa dice cómo quedaría) → *Simular medición*. El galpón pasa a
+   alerta roja y llega la notificación (operario o supervisor). Funciona también sin conexión.
 
 1. Entrar como **Operario** → menú ⋮ → *Simular pico de calor (demo)* → botón Inicio del teléfono.
 2. A los 10 s llega la notificación → tocarla abre directo **Alertas** → **Confirmar**.
+   La tarjeta dice qué hacer y ofrece *Registrar acción correctiva* con el galpón ya elegido.
+   Con **Jefatura** no llegan notificaciones: las alertas se consultan en el panel.
 3. Botón **Registrar acción** (formulario validado: galpón, tipo y descripción) → confirmación.
    "Atrás" desde la confirmación vuelve a Galpones, sin poder guardar la acción dos veces.
 4. Menú ⋮ → *Cerrar sesión* → **Supervisor** → pestaña **Historial**: alerta confirmada y acciones.

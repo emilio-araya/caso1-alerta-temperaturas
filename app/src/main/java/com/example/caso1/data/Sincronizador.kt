@@ -13,10 +13,11 @@ import kotlinx.coroutines.sync.withLock
  * para actualizar), la barra de navegación (reintentar / vuelve la red) y el
  * trabajo en segundo plano. Notifica solo las alertas críticas nuevas.
  * También reevalúa lo guardado cuando cambian los umbrales.
+ * [notificarCritico] es suspend: decide el destinatario leyendo la sesión guardada en DataStore.
  */
 class Sincronizador(
     private val repo: RepositorioGalpones,
-    private val notificarCritico: (AlertaEntity) -> Unit
+    private val notificarCritico: suspend (AlertaEntity) -> Unit
 ) {
     private val mutex = Mutex()
     private val _sincronizando = MutableStateFlow(false)
@@ -27,7 +28,7 @@ class Sincronizador(
         _sincronizando.value = true
         try {
             repo.refrescar().also { r ->
-                if (r is ResultadoSincronizacion.Correcto) r.nuevasCriticas.forEach(notificarCritico)
+                if (r is ResultadoSincronizacion.Correcto) r.nuevasCriticas.forEach { notificarCritico(it) }
             }
         } finally {
             _sincronizando.value = false
@@ -36,6 +37,11 @@ class Sincronizador(
 
     /** Tras cambiar los umbrales: recalcula con lo guardado (sin red) y notifica las críticas nuevas. */
     suspend fun reevaluar(): List<AlertaEntity> = mutex.withLock {
-        repo.reevaluar().also { it.forEach(notificarCritico) }
+        repo.reevaluar().also { lista -> lista.forEach { notificarCritico(it) } }
+    }
+
+    /** Simulación manual: guarda la medición ficticia (sin red) y notifica si dejó una crítica nueva. */
+    suspend fun simularMedicion(galponId: Int, temperatura: Double, humedad: Double): List<AlertaEntity> = mutex.withLock {
+        repo.registrarMedicionSimulada(galponId, temperatura, humedad).also { lista -> lista.forEach { notificarCritico(it) } }
     }
 }

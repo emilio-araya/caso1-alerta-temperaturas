@@ -19,8 +19,10 @@ import com.example.caso1.data.local.datosMonitoreo
 import com.example.caso1.data.repository.GalponRepository
 import com.example.caso1.data.repository.RepositorioGalpones
 import com.example.caso1.notifications.NotificationHelper
+import com.example.caso1.notifications.debeNotificar
 import com.example.caso1.work.AlertasWorker
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.first
 
 /**
  * Inyección de dependencias manual: cada dependencia se crea UNA vez aquí y se
@@ -56,8 +58,13 @@ class ContenedorApp(contexto: Context) {
     val repositorio: RepositorioGalpones by lazy { GalponRepository(app.datosMonitoreo, api, umbrales.umbrales) }
     val sesion: SessionManager by lazy { SessionManager(app) }
 
-    /** Acciones que necesitan Context, envueltas para que el ViewModel no lo conozca. */
-    val notificarCritico: (AlertaEntity) -> Unit = { NotificationHelper.notificarCritico(app, it) }
+    /**
+     * Acciones que necesitan Context, envueltas para que el ViewModel no lo conozca.
+     * Solo se notifica si la sesión es de operario o supervisor ([debeNotificar]); también en segundo plano.
+     */
+    val notificarCritico: suspend (AlertaEntity) -> Unit = { alerta ->
+        if (debeNotificar(sesion.rol.first())) NotificationHelper.notificarCritico(app, alerta)
+    }
     val programarRevisionDemo: () -> Unit = { AlertasWorker.programarRevision(app) }
 
     val sincronizador: Sincronizador by lazy { Sincronizador(repositorio, notificarCritico) }

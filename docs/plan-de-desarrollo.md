@@ -26,6 +26,8 @@ El caso exige demostrar **navegación, gestión de estado, persistencia local, c
 | F8 | Sin conexión: la UI lee siempre de DataStore; aviso con la hora de los datos | Todos | Hecho |
 | F9 | Diseño adaptable con Window Size Classes | Todos | Hecho |
 | F10 | Consumo de la API con Retrofit (JSON) desde json-server; deslizar para actualizar | Todos | Hecho |
+| F11 | Acción recomendada según el estado (detalle y alertas); notificaciones solo para operario y supervisor (`debeNotificar`) | Todos | Hecho |
+| F12 | Simular medición: formulario validado; lectura ficticia guardada en DataStore y evaluada en el teléfono, sin red (`SimulacionScreen`, `registrarMedicionSimulada`) | Todos | Hecho |
 
 ## 3. Trazabilidad: guías → funcionalidades → requisitos del caso
 

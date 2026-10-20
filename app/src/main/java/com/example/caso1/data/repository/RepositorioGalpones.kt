@@ -42,6 +42,13 @@ interface RepositorioGalpones {
     /** Modo demo: pide al servidor un pico de calor. Devuelve el galpón afectado, o null sin conexión. */
     suspend fun simularPicoDeCalor(): Int?
 
+    /**
+     * Simulación manual (respuesta 5 del docente): guarda una medición ficticia en DataStore,
+     * sin red, y recalcula el estado del galpón. Devuelve las críticas nuevas.
+     * Lanza IllegalArgumentException si el galpón no existe.
+     */
+    suspend fun registrarMedicionSimulada(galponId: Int, temperatura: Double, humedad: Double): List<AlertaEntity>
+
     suspend fun confirmarAlerta(alertaId: Int, galponId: Int, rol: Rol, detalle: String)
 
     suspend fun registrarAccion(galponId: Int, tipoAccion: String, descripcion: String)

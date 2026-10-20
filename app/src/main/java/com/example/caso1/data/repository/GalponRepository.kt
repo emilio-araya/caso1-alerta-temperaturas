@@ -117,6 +117,25 @@ class GalponRepository(
         return actualizarYEvaluar { actual -> evaluarGalpones(actual, actual.galpones.map { it.id }.toSet(), config) }
     }
 
+    /**
+     * Medición ficticia escrita en DataStore (no va a la API, funciona sin conexión). Se evalúa
+     * con la misma regla que las lecturas reales; la próxima lectura real más nueva la reemplaza.
+     */
+    override suspend fun registrarMedicionSimulada(galponId: Int, temperatura: Double, humedad: Double): List<AlertaEntity> {
+        val config = umbrales.first()
+        return actualizarYEvaluar { actual ->
+            require(actual.galpones.any { it.id == galponId }) { "Unknown shed: $galponId" }
+            val ahora = reloj()
+            val medicion = MedicionEntity(actual.siguienteIdMedicion, galponId, temperatura, humedad, ahora)
+            val conMedicion = actual.copy(
+                // Una sola medición por (galponId, fechaHora): la simulada reemplaza a la del mismo instante
+                mediciones = actual.mediciones.filterNot { it.galponId == galponId && it.fechaHora == ahora } + medicion,
+                siguienteIdMedicion = actual.siguienteIdMedicion + 1
+            )
+            evaluarGalpones(conMedicion, setOf(galponId), config)
+        }
+    }
+
     /** Un solo updateData (atómico); devuelve las alertas críticas nuevas que calculó [cambio]. */
     private suspend fun actualizarYEvaluar(
         cambio: (DatosMonitoreo) -> Pair<DatosMonitoreo, List<AlertaEntity>>
@@ -160,7 +179,7 @@ class GalponRepository(
     }
 
     /**
-     * Regla de negocio compartida por [refrescar] y [reevaluar]: el estado de cada galpón de
+     * Regla de negocio compartida por [refrescar], [reevaluar] y [registrarMedicionSimulada]: el estado de cada galpón de
      * [ids] sale de su medición más reciente evaluada con [config]. Una alerta activa por
      * galpón: se mantiene si sigue igual (conserva su confirmación), se reemplaza si cambió
      * de tipo/nivel y se desactiva si el galpón volvió a la normalidad.

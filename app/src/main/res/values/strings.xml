@@ -94,6 +94,12 @@
     <string name="red_reintentar">Reintentar</string>
     <string name="red_conectando">Conectando…</string>
 
+    <!-- Acción recomendada según el estado (respuesta 2 del docente) -->
+    <string name="accion_recomendada_titulo">Qué hacer</string>
+    <string name="accion_recomendada_advertencia">Revisa las condiciones del galpón y verifica los sistemas de ventilación.</string>
+    <string name="accion_recomendada_critico">Alerta prioritaria: se notificó al supervisor. Registra la acción correctiva.</string>
+    <string name="accion_recomendada_boton">Registrar acción correctiva</string>
+
     <!-- Detalle del galpón -->
     <string name="detalle_temperatura">Temperatura</string>
     <string name="detalle_rango_horas">Últimas %1$d h · una lectura cada 15 min</string>
@@ -193,4 +199,16 @@
     <string name="umbrales_error_rango_humedad">Debe estar entre 0 y 100 %</string>
     <string name="umbrales_error_mayor_min">Debe ser mayor que el mínimo normal</string>
     <string name="umbrales_error_mayor_max">Debe ser mayor que el máximo normal</string>
+
+    <!-- Simular medición (respuesta 5 del docente) -->
+    <string name="home_menu_simular_medicion">Simular medición</string>
+    <string name="simulacion_titulo">Simular medición</string>
+    <string name="simulacion_explicacion">Ingresa valores ficticios de temperatura y humedad para provocar alertas. La medición se guarda en el teléfono (funciona sin conexión) y la próxima lectura real del sistema la reemplaza.</string>
+    <string name="simulacion_galpon">Galpón</string>
+    <string name="simulacion_temperatura">Temperatura</string>
+    <string name="simulacion_humedad">Humedad relativa</string>
+    <string name="simulacion_vista_previa">Con estos valores el galpón quedaría: %1$s</string>
+    <string name="simulacion_boton">Simular medición</string>
+    <string name="simulacion_resultado">Medición simulada guardada. El galpón quedó: %1$s</string>
+    <string name="simulacion_error_galpon">Elige el galpón donde simular la medición</string>
 </resources>

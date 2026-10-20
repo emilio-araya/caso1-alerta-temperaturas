@@ -22,6 +22,13 @@ class RepositorioFalso(galponesIniciales: List<GalponEntity> = emptyList()) : Re
 
     val accionesGuardadas = mutableListOf<AccionGuardada>()
 
+    data class MedicionSimulada(val galponId: Int, val temperatura: Double, val humedad: Double)
+
+    val medicionesSimuladas = mutableListOf<MedicionSimulada>()
+
+    /** Lo que devolverá el próximo registrarMedicionSimulada(). */
+    var proximasCriticasSimuladas: List<AlertaEntity> = emptyList()
+
     /** Lo que devolverá el próximo refrescar(). */
     var proximoResultado: ResultadoSincronizacion = ResultadoSincronizacion.Correcto(emptyList())
     var vecesRefrescado = 0
@@ -52,6 +59,11 @@ class RepositorioFalso(galponesIniciales: List<GalponEntity> = emptyList()) : Re
     }
 
     override suspend fun simularPicoDeCalor(): Int? = null
+
+    override suspend fun registrarMedicionSimulada(galponId: Int, temperatura: Double, humedad: Double): List<AlertaEntity> {
+        medicionesSimuladas += MedicionSimulada(galponId, temperatura, humedad)
+        return proximasCriticasSimuladas
+    }
 
     override suspend fun confirmarAlerta(alertaId: Int, galponId: Int, rol: Rol, detalle: String) = Unit
 

@@ -129,6 +129,33 @@ fun EstadoVacio(@DrawableRes icono: Int, titulo: String, texto: String, modifier
     }
 }
 
+/**
+ * "Qué hacer" según el estado (respuesta 2 del docente). En crítico, si [onRegistrarCorrectiva]
+ * no es null (perfil operario), muestra el botón para registrar la acción correctiva.
+ */
+@Composable
+fun AccionRecomendada(estado: EstadoGalpon, modifier: Modifier = Modifier, onRegistrarCorrectiva: (() -> Unit)? = null) {
+    val texto = estado.accionRecomendadaRes() ?: return
+    Column(modifier) {
+        Row(verticalAlignment = Alignment.Top) {
+            Icono(R.drawable.ic_warning, null, Modifier.size(18.dp), estado.colores().texto)
+            Spacer(Modifier.width(8.dp))
+            Column {
+                Text(stringResource(R.string.accion_recomendada_titulo), style = MaterialTheme.typography.labelLarge)
+                Text(stringResource(texto), style = MaterialTheme.typography.bodyMedium)
+            }
+        }
+        if (estado == EstadoGalpon.CRITICO && onRegistrarCorrectiva != null) {
+            Spacer(Modifier.height(8.dp))
+            Button(onClick = onRegistrarCorrectiva, modifier = Modifier.fillMaxWidth()) {
+                Icono(R.drawable.ic_edit_note, null, Modifier.size(18.dp))
+                Spacer(Modifier.width(8.dp))
+                Text(stringResource(R.string.accion_recomendada_boton))
+            }
+        }
+    }
+}
+
 // ---------- Navegación principal (Material 3: barra inferior en teléfono, riel en pantallas grandes) ----------
 
 enum class Destino(val ruta: String, @param:StringRes val etiqueta: Int, @param:DrawableRes val icono: Int) {

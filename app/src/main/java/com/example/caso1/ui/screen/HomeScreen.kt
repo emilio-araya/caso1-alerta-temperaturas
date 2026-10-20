@@ -52,6 +52,7 @@ fun HomeScreen(
     onVerAlertas: () -> Unit,
     onRegistrar: (Int?) -> Unit,
     onConfigurarUmbrales: () -> Unit,
+    onSimularMedicion: () -> Unit,
     viewModel: HomeViewModel = viewModel(factory = HomeViewModel.Factory)
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
@@ -93,6 +94,12 @@ fun HomeScreen(
                             onClick = { menuAbierto = false; viewModel.alternarSinConexion() }
                         )
                     }
+                    // Simulación manual para todos los perfiles, también en release (respuesta 5 del docente)
+                    DropdownMenuItem(
+                        text = { Text(stringResource(R.string.home_menu_simular_medicion)) },
+                        leadingIcon = { Icono(R.drawable.ic_water_drop, null) },
+                        onClick = { menuAbierto = false; onSimularMedicion() }
+                    )
                     // Supervisor y jefatura ajustan los umbrales ficticios (respuesta 1 del docente)
                     if (rol == Rol.SUPERVISOR || rol == Rol.JEFATURA) {
                         DropdownMenuItem(

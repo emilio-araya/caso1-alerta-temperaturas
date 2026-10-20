@@ -9,6 +9,7 @@ object AppRoutes {
     const val CONFIRMAR = "confirmar"
     const val HISTORIAL = "historial"
     const val UMBRALES = "umbrales"
+    const val SIMULACION = "simulacion"
 
     fun detalle(galponId: Int) = "detalle/$galponId"
 

@@ -81,9 +81,17 @@ class RegistroAccionViewModelTest {
         assertNotNull(errores.descripcion)
     }
 
-    @Test fun preseleccionarNoPisaUnaEleccionDelUsuario() = runTest {
+    // El ViewModel vive en la entrada HOME de la pila: si antes se eligió un galpón y se abandonó
+    // el formulario, al entrar desde "Registrar acción correctiva" debe mandar el galpón de la alerta.
+    @Test fun preseleccionarPisaLaEleccionAnterior() = runTest {
         vm.onGalponChange(1)
         vm.preseleccionar(4)
-        assertEquals(1, vm.state.value.galponId)
+        assertEquals(4, vm.state.value.galponId)
+    }
+
+    @Test fun preseleccionarTambienBorraElErrorDelGalpon() = runTest {
+        vm.registrar()   // sin galpón: queda el error
+        vm.preseleccionar(4)
+        assertNull(vm.state.value.errores.galpon)
     }
 }

@@ -84,11 +84,19 @@ fun AppNavigation(
                 onVerDetalle = { id -> navController.navigate(AppRoutes.detalle(id)) },
                 onVerAlertas = { irA(Destino.ALERTAS) },
                 onRegistrar = { id -> navController.navigate(AppRoutes.registrar(id)) },
-                onConfigurarUmbrales = { navController.navigate(AppRoutes.UMBRALES) }
+                onConfigurarUmbrales = { navController.navigate(AppRoutes.UMBRALES) },
+                onSimularMedicion = { navController.navigate(AppRoutes.SIMULACION) }
             )
         }
         composable(AppRoutes.UMBRALES) { UmbralesScreen(onBack = { navController.popBackStack() }) }
-        composable(AppRoutes.ALERTAS) { AlertasScreen(marco) }
+        composable(AppRoutes.SIMULACION) { SimulacionScreen(onBack = { navController.popBackStack() }) }
+        composable(AppRoutes.ALERTAS) {
+            // En una alerta crítica el operario registra la acción correctiva con el galpón ya elegido
+            AlertasScreen(
+                marco,
+                onRegistrarCorrectiva = if (rolActual == Rol.OPERARIO) { id -> navController.navigate(AppRoutes.registrar(id)) } else null
+            )
+        }
         composable(AppRoutes.HISTORIAL) { HistorialScreen(marco) }
 
         // Registro y confirmación comparten el ViewModel, ligado a la entrada HOME de la pila

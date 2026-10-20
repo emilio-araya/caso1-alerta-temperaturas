@@ -26,6 +26,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.caso1.R
 import com.example.caso1.data.local.MedicionEntity
 import com.example.caso1.data.model.ConfigUmbrales
+import com.example.caso1.data.model.EstadoGalpon
 import com.example.caso1.ui.theme.EstiloCifra
 import com.example.caso1.ui.theme.EstiloEstado
 import com.example.caso1.ui.theme.LocalPaletaEstados
@@ -60,6 +61,13 @@ fun DetalleContenido(state: DetalleUiState, modifier: Modifier = Modifier, onReg
     LazyColumn(modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = 24.dp)) {
         item { PlacaEstado(ultima, state) }
 
+        // Qué hacer según el estado; en crítico el operario registra la acción correctiva desde aquí
+        if (estado != EstadoGalpon.NORMAL) {
+            item {
+                AccionRecomendada(estado, Modifier.padding(start = 16.dp, end = 16.dp, top = 16.dp), onRegistrarCorrectiva = onRegistrar)
+            }
+        }
+
         item {
             Column(Modifier.padding(16.dp)) {
                 Text(stringResource(R.string.detalle_temperatura), style = MaterialTheme.typography.titleMedium)
@@ -75,7 +83,8 @@ fun DetalleContenido(state: DetalleUiState, modifier: Modifier = Modifier, onReg
                 ) {
                     GraficoTemperatura(mediciones.reversed(), state.umbrales, Modifier.padding(12.dp))
                 }
-                if (onRegistrar != null) {
+                // En crítico ya está el botón "Registrar acción correctiva" arriba
+                if (onRegistrar != null && estado != EstadoGalpon.CRITICO) {
                     Spacer(Modifier.height(16.dp))
                     FilledTonalButton(onClick = onRegistrar, modifier = Modifier.fillMaxWidth()) {
                         Icono(R.drawable.ic_edit_note, null, Modifier.size(18.dp))

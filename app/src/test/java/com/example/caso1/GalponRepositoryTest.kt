@@ -282,6 +282,61 @@ class GalponRepositoryTest {
         assertEquals(listOf(EstadoGalpon.CRITICO, EstadoGalpon.ADVERTENCIA), repo.galpones.first().map { it.estado })
     }
 
+    // --- Manual simulation (Q&A 5): written locally to DataStore, works offline ---
+
+    @Test fun medicionSimuladaSeGuardaYGeneraLaAlertaSinRed() = runBlocking {
+        val api = ApiControlada(ahora).apply { mediciones = mapOf(1 to listOf(MedicionDto(1, 24.0, 60.0, ahora - 60_000))) }
+        var reloj = ahora
+        val repo = GalponRepository(abrirAlmacen(), api, reloj = { reloj })
+        repo.refrescar()
+        assertEquals(EstadoGalpon.NORMAL, repo.galpones.first().single().estado)
+        api.falla = { throw IOException("sin red") }
+        val llamadasAntes = api.llamadas
+
+        val nuevas = repo.registrarMedicionSimulada(1, 35.0, 60.0)
+
+        assertEquals(llamadasAntes, api.llamadas)   // no API call
+        val critica = AlertaEntity(1, 1, "TEMPERATURA_ALTA", NivelAlerta.CRITICO, true, ahora)
+        assertEquals(listOf(critica), nuevas)
+        assertEquals(MedicionEntity(2, 1, 35.0, 60.0, ahora), repo.mediciones(1).first().first())
+        assertEquals(EstadoGalpon.CRITICO, repo.galpones.first().single().estado)
+        assertEquals(listOf(critica), repo.alertasActivas.first())
+
+        // Same values again: the active alert stays, nothing new to notify
+        reloj = ahora + 1_000
+        assertEquals(emptyList<AlertaEntity>(), repo.registrarMedicionSimulada(1, 35.0, 60.0))
+        assertEquals(listOf(critica), repo.alertas.first())
+
+        // Normal values: the alert is deactivated and the shed is normal again
+        reloj = ahora + 2_000
+        assertEquals(emptyList<AlertaEntity>(), repo.registrarMedicionSimulada(1, 24.0, 60.0))
+        assertTrue(repo.alertasActivas.first().isEmpty())
+        assertEquals(listOf(1 to false), repo.alertas.first().map { it.id to it.activa })
+        assertEquals(EstadoGalpon.NORMAL, repo.galpones.first().single().estado)
+        assertEquals(listOf(ahora + 2_000, ahora + 1_000, ahora, ahora - 60_000), repo.mediciones(1).first().map { it.fechaHora })
+    }
+
+    @Test fun medicionSimuladaEnElMismoInstanteReemplazaLaLectura() = runBlocking {
+        // The synced reading and the simulated one share (galponId, fechaHora): one row, the simulated one wins
+        val repo = GalponRepository(abrirAlmacen(), ApiControlada(ahora), reloj = { ahora })
+        repo.refrescar()   // 33.5 °C at `ahora`: critical
+
+        repo.registrarMedicionSimulada(1, 24.0, 60.0)
+
+        assertEquals(listOf(MedicionEntity(2, 1, 24.0, 60.0, ahora)), repo.mediciones(1).first())
+        assertEquals(EstadoGalpon.NORMAL, repo.galpones.first().single().estado)
+    }
+
+    @Test fun medicionSimuladaDeGalponDesconocidoNoGuardaNada() = runBlocking {
+        val repo = GalponRepository(abrirAlmacen(), ApiControlada(ahora), reloj = { ahora })
+        repo.refrescar()
+
+        val error = runCatching { repo.registrarMedicionSimulada(99, 35.0, 60.0) }.exceptionOrNull()
+
+        assertTrue(error is IllegalArgumentException)
+        assertDatosGuardadosIntactos(repo)
+    }
+
     // --- Local actions ---
 
     @Test fun confirmarAlertaRegistraQuienYCuandoConUnEvento() = runBlocking {

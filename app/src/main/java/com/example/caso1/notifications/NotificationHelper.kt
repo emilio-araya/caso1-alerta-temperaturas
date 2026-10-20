@@ -11,9 +11,16 @@ import androidx.core.app.NotificationManagerCompat
 import com.example.caso1.MainActivity
 import com.example.caso1.R
 import com.example.caso1.data.local.AlertaEntity
+import com.example.caso1.data.model.Rol
 import com.example.caso1.ui.screen.tipoAlertaRes
 import androidx.compose.ui.graphics.toArgb
 import com.example.caso1.ui.theme.AlertaRoja
+
+/**
+ * Destinatarios (respuesta 4 del docente): operarios y supervisores reciben la notificación;
+ * la jefatura consulta las alertas en el panel general. Sin sesión ([rol] null) no se notifica.
+ */
+fun debeNotificar(rol: Rol?): Boolean = rol == Rol.OPERARIO || rol == Rol.SUPERVISOR
 
 object NotificationHelper {
     private const val CHANNEL_ID = "alertas_criticas"

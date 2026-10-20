@@ -48,6 +48,17 @@ fun EstadoGalpon.etiquetaCortaRes(): Int = when (this) {
     EstadoGalpon.CRITICO -> R.string.estado_corto_roja
 }
 
+/**
+ * Qué hacer según el estado (respuesta 2 del docente); null si el galpón está normal.
+ * Se usa en el detalle del galpón y en cada alerta.
+ */
+@StringRes
+fun EstadoGalpon.accionRecomendadaRes(): Int? = when (this) {
+    EstadoGalpon.NORMAL -> null
+    EstadoGalpon.ADVERTENCIA -> R.string.accion_recomendada_advertencia
+    EstadoGalpon.CRITICO -> R.string.accion_recomendada_critico
+}
+
 @Composable
 fun EstadoGalpon.etiqueta(): String = stringResource(etiquetaRes())
 

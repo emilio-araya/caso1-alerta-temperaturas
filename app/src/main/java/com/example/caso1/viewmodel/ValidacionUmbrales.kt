@@ -4,9 +4,12 @@ import androidx.annotation.StringRes
 import com.example.caso1.R
 import com.example.caso1.data.model.ConfigUmbrales
 
-/** Rangos físicos aceptados (si se cambian, actualizar los mensajes umbrales_error_rango_*). */
-private val RANGO_TEMPERATURA = -10.0..60.0
-private val RANGO_HUMEDAD = 0.0..100.0
+/**
+ * Rangos físicos aceptados, también en la simulación (si se cambian, actualizar los
+ * mensajes umbrales_error_rango_*).
+ */
+val RANGO_TEMPERATURA = -10.0..60.0
+val RANGO_HUMEDAD = 0.0..100.0
 
 /** Los seis campos del formulario de umbrales. El texto visible de cada uno está en strings.xml. */
 enum class CampoUmbral(@param:StringRes val etiqueta: Int, val esTemperatura: Boolean) {

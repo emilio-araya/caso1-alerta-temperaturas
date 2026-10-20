@@ -24,7 +24,11 @@ import com.example.caso1.viewmodel.AlertasViewModel
  * jefatura solo consulta. La alerta sigue activa hasta que el galpón vuelva a la normalidad.
  */
 @Composable
-fun AlertasScreen(marco: Marco, viewModel: AlertasViewModel = viewModel(factory = AlertasViewModel.Factory)) {
+fun AlertasScreen(
+    marco: Marco,
+    onRegistrarCorrectiva: ((Int) -> Unit)? = null,   // solo operario: abre el registro con el galpón elegido
+    viewModel: AlertasViewModel = viewModel(factory = AlertasViewModel.Factory)
+) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val rol = marco.rol
     val puedeConfirmar = viewModel.puedeConfirmar(rol)
@@ -66,7 +70,10 @@ fun AlertasScreen(marco: Marco, viewModel: AlertasViewModel = viewModel(factory 
                 )
             }
             items(state.alertas, key = { it.id }) { a ->
-                TarjetaAlerta(alerta = a, puedeConfirmar = puedeConfirmar, onConfirmar = { porConfirmar = a })
+                TarjetaAlerta(
+                    alerta = a, puedeConfirmar = puedeConfirmar, onConfirmar = { porConfirmar = a },
+                    onRegistrarCorrectiva = onRegistrarCorrectiva?.let { { it(a.galponId) } }
+                )
             }
             if (!puedeConfirmar) {
                 item {
@@ -106,7 +113,9 @@ fun AlertasScreen(marco: Marco, viewModel: AlertasViewModel = viewModel(factory 
 }
 
 @Composable
-private fun TarjetaAlerta(alerta: AlertaUi, puedeConfirmar: Boolean, onConfirmar: () -> Unit) {
+private fun TarjetaAlerta(
+    alerta: AlertaUi, puedeConfirmar: Boolean, onConfirmar: () -> Unit, onRegistrarCorrectiva: (() -> Unit)?
+) {
     val c = alerta.nivel.colores()
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -125,6 +134,8 @@ private fun TarjetaAlerta(alerta: AlertaUi, puedeConfirmar: Boolean, onConfirmar
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
+            Spacer(Modifier.height(12.dp))
+            AccionRecomendada(alerta.nivel.estado, onRegistrarCorrectiva = onRegistrarCorrectiva)
             Spacer(Modifier.height(12.dp))
             Row(verticalAlignment = Alignment.CenterVertically) {
                 if (alerta.confirmada) {

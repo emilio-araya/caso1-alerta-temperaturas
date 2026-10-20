@@ -87,9 +87,13 @@ class RegistroAccionViewModel(
         _state.value = _state.value.copy(descripcion = v, errores = _state.value.errores.copy(descripcion = null))
     }
 
-    /** Al llegar desde el detalle de un galpón, el formulario ya viene con ese galpón elegido. */
+    /**
+     * Al llegar desde el detalle o desde una alerta, el formulario ya viene con ese galpón elegido.
+     * La navegación explícita manda: el ViewModel vive en la entrada HOME de la pila, así que puede
+     * conservar un galpón elegido en un formulario anterior.
+     */
     fun preseleccionar(galponId: Int) {
-        if (_state.value.galponId == null) onGalponChange(galponId)
+        onGalponChange(galponId)
     }
 
     fun registrar() {
