@@ -5,6 +5,7 @@ import androidx.datastore.core.CorruptionException
 import androidx.datastore.core.DataStore
 import androidx.datastore.core.DataStoreFactory
 import androidx.datastore.core.Serializer
+import androidx.datastore.core.handlers.ReplaceFileCorruptionHandler
 import androidx.datastore.dataStore
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.serialization.Serializable
@@ -50,12 +51,24 @@ object SerializadorMonitoreo : Serializer<DatosMonitoreo> {
     }
 }
 
+/**
+ * Un JSON roto (escritura interrumpida, archivo editado a mano) no puede dejar la app inutilizable:
+ * la caché se reemplaza por un documento vacío y el próximo sync la vuelve a llenar.
+ */
+private val reemplazarSiEstaCorrupto = ReplaceFileCorruptionHandler { DatosMonitoreo() }
+
 /** DataStore de la app (archivo files/datastore/monitoreo.json). Distinto del de la sesión ("sesion"). */
 val Context.datosMonitoreo: DataStore<DatosMonitoreo> by dataStore(
     fileName = "monitoreo.json",
-    serializer = SerializadorMonitoreo
+    serializer = SerializadorMonitoreo,
+    corruptionHandler = reemplazarSiEstaCorrupto
 )
 
 /** Para tests: un DataStore sobre [archivo]; cancelar [alcance] libera el archivo. */
 fun crearAlmacenMonitoreo(archivo: File, alcance: CoroutineScope): DataStore<DatosMonitoreo> =
-    DataStoreFactory.create(serializer = SerializadorMonitoreo, scope = alcance, produceFile = { archivo })
+    DataStoreFactory.create(
+        serializer = SerializadorMonitoreo,
+        corruptionHandler = reemplazarSiEstaCorrupto,
+        scope = alcance,
+        produceFile = { archivo }
+    )

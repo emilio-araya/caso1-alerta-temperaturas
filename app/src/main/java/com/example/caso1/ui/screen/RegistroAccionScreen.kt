@@ -24,6 +24,7 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.caso1.R
+import com.example.caso1.data.local.borrarEvidencia
 import com.example.caso1.data.local.crearArchivoEvidencia
 import com.example.caso1.data.local.uriEvidencia
 import com.example.caso1.viewmodel.MIN_DESCRIPCION
@@ -48,7 +49,8 @@ fun RegistroAccionScreen(
     var fotoPendiente by rememberSaveable { mutableStateOf<String?>(null) }
 
     val capturarFoto = rememberLauncherForActivityResult(ActivityResultContracts.TakePicture()) { guardada ->
-        // Cancelar descarta la elección; el archivo creado queda vacío en files/evidencias/
+        // Cancelar descarta la foto y también el archivo vacío que se preparó para la cámara
+        if (!guardada) borrarEvidencia(fotoPendiente)
         viewModel.onFotoChange(if (guardada) fotoPendiente else null)
         fotoPendiente = null
     }

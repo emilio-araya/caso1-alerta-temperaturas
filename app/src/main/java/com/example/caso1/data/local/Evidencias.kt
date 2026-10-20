@@ -28,3 +28,12 @@ fun crearArchivoEvidencia(context: Context): File {
 /** URI que la cámara del sistema puede escribir, con permiso temporal para ese archivo. */
 fun uriEvidencia(context: Context, archivo: File): Uri =
     FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", archivo)
+
+/**
+ * Borra una foto que nunca se llegó a usar: si el operario cancela la cámara, el archivo
+ * preparado queda vacío. Acepta null y rutas que ya no existen sin fallar.
+ */
+fun borrarEvidencia(ruta: String?) {
+    if (ruta == null) return
+    runCatching { File(ruta).delete() }
+}
