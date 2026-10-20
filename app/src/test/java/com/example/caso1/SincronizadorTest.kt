@@ -1,7 +1,7 @@
 package com.example.caso1
 
 import com.example.caso1.data.Sincronizador
-import com.example.caso1.data.db.AlertaEntity
+import com.example.caso1.data.local.AlertaEntity
 import com.example.caso1.data.model.NivelAlerta
 import com.example.caso1.data.repository.EstadoConexion
 import com.example.caso1.data.repository.ResultadoSincronizacion

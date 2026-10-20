@@ -1,7 +1,6 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
-    alias(libs.plugins.ksp)
     alias(libs.plugins.kotlin.serialization)
 }
 
@@ -49,6 +48,10 @@ android {
         compose = true
         buildConfig = true
     }
+    testOptions {
+        // android.util.Log (used by GalponRepository) returns defaults in JVM tests instead of throwing
+        unitTests.isReturnDefaultValues = true
+    }
 }
 
 dependencies {
@@ -72,10 +75,8 @@ dependencies {
     implementation(libs.androidx.lifecycle.runtime.compose)
     implementation(libs.androidx.lifecycle.viewmodel.compose)
     implementation(libs.androidx.navigation.compose)
-    implementation(libs.androidx.room.runtime)
-    implementation(libs.androidx.room.ktx)
-    ksp(libs.androidx.room.compiler)
     implementation(libs.androidx.datastore)
+    implementation(libs.androidx.datastore.core)
     implementation(libs.androidx.work)
     implementation(libs.retrofit)
     implementation(libs.retrofit.kotlinx.serialization)

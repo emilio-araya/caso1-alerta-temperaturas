@@ -26,8 +26,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.caso1.BuildConfig
 import com.example.caso1.R
-import com.example.caso1.data.db.GalponEntity
-import com.example.caso1.data.db.MedicionEntity
+import com.example.caso1.data.local.GalponEntity
+import com.example.caso1.data.local.MedicionEntity
 import com.example.caso1.data.model.EstadoGalpon
 import com.example.caso1.data.model.Rol
 import com.example.caso1.data.model.Umbrales

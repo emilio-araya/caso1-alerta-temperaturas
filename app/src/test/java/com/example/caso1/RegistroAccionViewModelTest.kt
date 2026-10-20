@@ -1,6 +1,6 @@
 package com.example.caso1
 
-import com.example.caso1.data.db.GalponEntity
+import com.example.caso1.data.local.GalponEntity
 import com.example.caso1.data.model.EstadoGalpon
 import com.example.caso1.viewmodel.RegistroAccionViewModel
 import com.example.caso1.viewmodel.TipoAccion

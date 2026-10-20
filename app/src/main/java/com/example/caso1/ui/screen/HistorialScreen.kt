@@ -18,8 +18,8 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.caso1.R
-import com.example.caso1.data.db.AlertaEntity
-import com.example.caso1.data.db.EventoEntity
+import com.example.caso1.data.local.AlertaEntity
+import com.example.caso1.data.local.EventoEntity
 import com.example.caso1.data.repository.ACCION_CONFIRMAR
 import com.example.caso1.viewmodel.HistorialViewModel
 

@@ -1,9 +1,9 @@
 package com.example.caso1.data.repository
 
-import com.example.caso1.data.db.AlertaEntity
-import com.example.caso1.data.db.EventoEntity
-import com.example.caso1.data.db.GalponEntity
-import com.example.caso1.data.db.MedicionEntity
+import com.example.caso1.data.local.AlertaEntity
+import com.example.caso1.data.local.EventoEntity
+import com.example.caso1.data.local.GalponEntity
+import com.example.caso1.data.local.MedicionEntity
 import com.example.caso1.data.model.Rol
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
@@ -15,13 +15,13 @@ enum class EstadoConexion { SIN_DATOS, EN_LINEA, SIN_CONEXION }
 sealed interface ResultadoSincronizacion {
     /** [nuevasCriticas]: alertas críticas que aparecieron en esta sincronización (para notificar). */
     data class Correcto(val nuevasCriticas: List<AlertaEntity>) : ResultadoSincronizacion
-    /** No se pudo contactar el servidor: la app sigue mostrando lo guardado en Room. */
+    /** No se pudo contactar el servidor: la app sigue mostrando lo guardado en DataStore. */
     data object SinConexion : ResultadoSincronizacion
 }
 
 /**
  * Lo que los ViewModels necesitan de los datos. Dependen de esta interfaz y no de
- * Room ni de Retrofit: en los tests se reemplaza por una implementación falsa en memoria.
+ * DataStore ni de Retrofit: en los tests se reemplaza por una implementación falsa en memoria.
  */
 interface RepositorioGalpones {
     val galpones: Flow<List<GalponEntity>>
@@ -33,7 +33,7 @@ interface RepositorioGalpones {
 
     fun mediciones(galponId: Int): Flow<List<MedicionEntity>>
 
-    /** Descarga de la API y guarda en Room. Nunca lanza por falta de red. */
+    /** Descarga de la API y guarda en DataStore. Nunca lanza por falta de red. */
     suspend fun refrescar(): ResultadoSincronizacion
 
     /** Modo demo: pide al servidor un pico de calor. Devuelve el galpón afectado, o null sin conexión. */

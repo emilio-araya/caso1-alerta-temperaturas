@@ -1,6 +1,6 @@
 package com.example.caso1.data
 
-import com.example.caso1.data.db.AlertaEntity
+import com.example.caso1.data.local.AlertaEntity
 import com.example.caso1.data.repository.RepositorioGalpones
 import com.example.caso1.data.repository.ResultadoSincronizacion
 import kotlinx.coroutines.flow.MutableStateFlow

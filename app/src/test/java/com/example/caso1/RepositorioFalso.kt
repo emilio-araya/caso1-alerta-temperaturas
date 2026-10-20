@@ -1,9 +1,9 @@
 package com.example.caso1
 
-import com.example.caso1.data.db.AlertaEntity
-import com.example.caso1.data.db.EventoEntity
-import com.example.caso1.data.db.GalponEntity
-import com.example.caso1.data.db.MedicionEntity
+import com.example.caso1.data.local.AlertaEntity
+import com.example.caso1.data.local.EventoEntity
+import com.example.caso1.data.local.GalponEntity
+import com.example.caso1.data.local.MedicionEntity
 import com.example.caso1.data.model.Rol
 import com.example.caso1.data.repository.EstadoConexion
 import com.example.caso1.data.repository.RepositorioGalpones
@@ -13,7 +13,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.emptyFlow
 
 /**
- * Repositorio en memoria para los tests: sin Room, red ni emulador. Guarda las
+ * Repositorio en memoria para los tests: sin DataStore, red ni emulador. Guarda las
  * llamadas que recibe para poder comprobarlas.
  */
 class RepositorioFalso(galponesIniciales: List<GalponEntity> = emptyList()) : RepositorioGalpones {

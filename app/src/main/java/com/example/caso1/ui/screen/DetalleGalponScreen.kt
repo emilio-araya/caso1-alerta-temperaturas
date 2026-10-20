@@ -24,7 +24,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.caso1.R
-import com.example.caso1.data.db.MedicionEntity
+import com.example.caso1.data.local.MedicionEntity
 import com.example.caso1.data.model.Umbrales
 import com.example.caso1.ui.theme.EstiloCifra
 import com.example.caso1.ui.theme.EstiloEstado

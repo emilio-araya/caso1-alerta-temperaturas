@@ -20,7 +20,7 @@ persistencia local (offline) y notificaciones.
 | F5 | Historial de alertas (activas/resueltas) y acciones, filtrable por galpón | Supervisor, Jefatura |
 | F6 | Registro de acción con formulario validado y pantalla de confirmación | Operario |
 | F7 | Resumen: conteo por estado, alertas activas y alertas del día | Jefatura |
-| F8 | Funciona sin conexión: la UI siempre lee de Room; aviso "Sin conexión" con la hora de los datos y reconexión automática | Todos |
+| F8 | Funciona sin conexión: la UI siempre lee de DataStore; aviso "Sin conexión" con la hora de los datos y reconexión automática | Todos |
 | F10 | Consumo de la API del sistema de monitoreo con Retrofit (JSON), deslizar para actualizar | Todos |
 | F9 | Diseño adaptable con Window Size Classes (1 columna / 2 columnas / lista + detalle; barra inferior o riel lateral) | Todos |
 
@@ -34,10 +34,10 @@ persistencia local (offline) y notificaciones.
 
 ## Arquitectura
 
-MVVM con Room como fuente única de verdad:
+MVVM con DataStore como fuente única de verdad (persistencia local solo con DataStore):
 
 ```
-UI (Compose) → ViewModel (StateFlow) → RepositorioGalpones → { API (Retrofit + JSON), Room }
+UI (Compose) → ViewModel (StateFlow) → RepositorioGalpones → { API (Retrofit + JSON), DataStore }
                                                 ↑
                          AlertasWorker (WorkManager, cada 15 min)
 ```
@@ -48,15 +48,18 @@ UI (Compose) → ViewModel (StateFlow) → RepositorioGalpones → { API (Retrof
   **json-server** en el PC. La app la consume por HTTP con Retrofit; la URL viene de
   `BuildConfig.API_URL_BASE` (propiedad Gradle `caso1.apiUrl`). Ver `mock-api/README.md`.
 - `data/api/InterceptorConectividad.kt` — corta la petición sin red o con el modo demo
-  "sin conexión", para que la app use los datos guardados en Room.
+  "sin conexión", para que la app use los datos guardados en DataStore.
 - `data/api/ServidorSimulado.kt` — alternativa sin PC: un interceptor de OkHttp que responde el
   mismo JSON dentro de la app. Se activa compilando con `-Pcaso1.apiSimulada=true`.
 - `data/MonitorConectividad.kt` y `data/Sincronizador.kt` — detectan la red del teléfono y
-  sincronizan la API con Room (al abrir, al deslizar, al volver la conexión y cada 15 min).
+  sincronizan la API con DataStore (al abrir, al deslizar, al volver la conexión y cada 15 min).
 - `data/api/MockMonitorApi.kt` — datos del servidor simulado, deterministas: estado, alertas e
   historial siempre coinciden. Ciclo suave de 24 h con una medición cada 15 min.
-- `data/db/` — Room: galpones, mediciones, alertas y eventos (con migración 2→3).
-- `data/repository/GalponRepository.kt` — sincroniza la API con Room; una alerta
+- `data/local/` — caché local en DataStore tipado: `monitoreo.json` (JSON con kotlinx.serialization)
+  guarda galpones, mediciones (últimas 24 h), alertas y eventos. Cada sincronización se escribe en
+  un solo `updateData`, atómico: o se guarda todo o nada. La sesión usa Preferences DataStore
+  (`sesion`, Guía 12). Room se quitó porque la rúbrica del curso evalúa DataStore.
+- `data/repository/GalponRepository.kt` — sincroniza la API con DataStore; una alerta
   activa por galpón, sin duplicados; confirmación de alertas.
 - `AlertaTemperaturasApp.kt` — inyección de dependencias manual: `ContenedorApp`
   crea una sola vez el repositorio y la sesión; cada ViewModel los recibe por
@@ -64,7 +67,7 @@ UI (Compose) → ViewModel (StateFlow) → RepositorioGalpones → { API (Retrof
 - `data/repository/RepositorioGalpones.kt` — interfaz del repositorio; los
   ViewModels dependen de ella y en los tests se usa una versión falsa en memoria.
 - `viewmodel/` — un ViewModel por pantalla; `SessionViewModel` para la sesión.
-  `AlertasViewModel` entrega `AlertaUi` (modelo de pantalla) en vez de la entidad de Room.
+  `AlertasViewModel` entrega `AlertaUi` (modelo de pantalla) en vez del registro guardado.
 - `res/values/strings.xml` — todos los textos de la app, con plurales.
 - `ui/screen/` — pantallas Compose; `ui/navigation/` — Navigation Compose.
 - `work/AlertasWorker.kt` — revisión en segundo plano y notificaciones.
@@ -88,18 +91,11 @@ normalidad; si empeora (advertencia → crítico) se genera una alerta nueva.
 Sin el PC disponible, compilar con el servidor simulado interno:
 `./gradlew installDebug -Pcaso1.apiSimulada=true`.
 
-Tests unitarios (umbrales, coherencia del mock, validación del formulario y `RegistroAccionViewModel` con `runTest` y un repositorio falso):
+Tests unitarios (umbrales, coherencia del mock, validación del formulario, `RegistroAccionViewModel` con `runTest` y un repositorio falso, y `GalponRepository` sobre un archivo DataStore real: sin red, error 500 o servidor apagado se siguen entregando los datos guardados; reglas de alertas, retención y persistencia al reiniciar):
 
 ```bash
 ./gradlew testDebugUnitTest
 cd mock-api && npm test   # endpoints y umbrales de la API simulada
-```
-
-Test instrumentado (requiere un emulador o dispositivo conectado): con la API caída, sin red o
-con error del servidor, el repositorio sigue entregando los datos guardados en Room.
-
-```bash
-./gradlew connectedDebugAndroidTest
 ```
 
 ## Guion de demo

@@ -11,8 +11,8 @@ import com.example.caso1.data.api.ClienteApi
 import com.example.caso1.data.api.InterceptorConectividad
 import com.example.caso1.data.api.MonitorApi
 import com.example.caso1.data.api.ServidorSimulado
-import com.example.caso1.data.db.AlertaEntity
-import com.example.caso1.data.db.DatabaseProvider
+import com.example.caso1.data.local.AlertaEntity
+import com.example.caso1.data.local.datosMonitoreo
 import com.example.caso1.data.repository.GalponRepository
 import com.example.caso1.data.repository.RepositorioGalpones
 import com.example.caso1.notifications.NotificationHelper
@@ -47,7 +47,7 @@ class ContenedorApp(contexto: Context) {
         }
     }
 
-    val repositorio: RepositorioGalpones by lazy { GalponRepository(DatabaseProvider.get(app), api) }
+    val repositorio: RepositorioGalpones by lazy { GalponRepository(app.datosMonitoreo, api) }
     val sesion: SessionManager by lazy { SessionManager(app) }
 
     /** Acciones que necesitan Context, envueltas para que el ViewModel no lo conozca. */

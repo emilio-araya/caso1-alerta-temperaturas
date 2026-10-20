@@ -21,7 +21,7 @@ import kotlinx.coroutines.launch
 /** Estado de la conexión con el sistema de monitoreo, para el aviso "Sin conexión". */
 data class EstadoRed(
     val conexion: EstadoConexion = EstadoConexion.SIN_DATOS,
-    val ultimaActualizacion: Long? = null,   // lectura más reciente guardada en Room
+    val ultimaActualizacion: Long? = null,   // lectura más reciente guardada en DataStore
     val sincronizando: Boolean = false
 )
 

@@ -5,8 +5,8 @@ import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.example.caso1.contenedor
-import com.example.caso1.data.db.AlertaEntity
-import com.example.caso1.data.db.GalponEntity
+import com.example.caso1.data.local.AlertaEntity
+import com.example.caso1.data.local.GalponEntity
 import com.example.caso1.data.model.NivelAlerta
 import com.example.caso1.data.model.Rol
 import com.example.caso1.data.repository.RepositorioGalpones

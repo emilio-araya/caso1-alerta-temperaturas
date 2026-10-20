@@ -10,7 +10,7 @@ import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import com.example.caso1.MainActivity
 import com.example.caso1.R
-import com.example.caso1.data.db.AlertaEntity
+import com.example.caso1.data.local.AlertaEntity
 import com.example.caso1.ui.screen.tipoAlertaRes
 import androidx.compose.ui.graphics.toArgb
 import com.example.caso1.ui.theme.AlertaRoja

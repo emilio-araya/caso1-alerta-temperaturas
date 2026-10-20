@@ -7,7 +7,7 @@ import com.example.caso1.data.repository.ResultadoSincronizacion
 import java.util.concurrent.TimeUnit
 
 /**
- * Consulta la API en segundo plano (aunque la app esté cerrada), guarda en Room
+ * Consulta la API en segundo plano (aunque la app esté cerrada), guarda en DataStore
  * y notifica las alertas críticas NUEVAS.
  */
 class AlertasWorker(context: Context, params: WorkerParameters) : CoroutineWorker(context, params) {

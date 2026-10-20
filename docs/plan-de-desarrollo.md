@@ -2,7 +2,7 @@
 
 **Asignatura:** DSY1105 · Desarrollo de Aplicaciones Móviles
 **Stack:** Kotlin + Jetpack Compose + Material 3 · minSdk 24 · targetSdk 37 · MVVM
-**Persistencia:** Room (datos) + DataStore (sesión) · **API:** Retrofit contra json-server (datos simulados)
+**Persistencia:** solo DataStore — Preferences (sesión) + tipado JSON `monitoreo.json` (datos) · **API:** Retrofit contra json-server (datos simulados)
 
 ---
 
@@ -23,7 +23,7 @@ El caso exige demostrar **navegación, gestión de estado, persistencia local, c
 | F5 | Historial de alertas y acciones, filtrable por galpón | Supervisor, Jefatura | Hecho |
 | F6 | Registro de acción con formulario validado y confirmación (ViewModel compartido) | Operario | Hecho |
 | F7 | Resumen: conteo por estado, alertas activas y del día | Jefatura | Hecho |
-| F8 | Sin conexión: la UI lee siempre de Room; aviso con la hora de los datos | Todos | Hecho |
+| F8 | Sin conexión: la UI lee siempre de DataStore; aviso con la hora de los datos | Todos | Hecho |
 | F9 | Diseño adaptable con Window Size Classes | Todos | Hecho |
 | F10 | Consumo de la API con Retrofit (JSON) desde json-server; deslizar para actualizar | Todos | Hecho |
 
@@ -35,14 +35,14 @@ El caso exige demostrar **navegación, gestión de estado, persistencia local, c
 | 10 | Navigation Compose, rutas centralizadas, `Scaffold`, `NavigationBar` | `ui/navigation/AppRoutes.kt`, `AppNavigation.kt`; pestañas según rol | Navegación |
 | 11 | Formulario reactivo, validación en ViewModel, ViewModel compartido | F6: `RegistroAccionViewModel` + `ConfirmacionScreen` | Gestión de estado |
 | 12 | `StateFlow`, `stateIn`, DataStore, `animateColorAsState` | F1 (sesión), boletín y franjas de estado animadas | Gestión de estado / persistencia |
-| — | Room | F8: fuente única de verdad | Persistencia local |
+| 12 | DataStore tipado (`Serializer` + JSON) | F8: fuente única de verdad, `data/local/` | Persistencia local |
 | — | Retrofit + json-server | `data/api/`, `mock-api/` | Consumo de API |
 | — | Notificaciones + WorkManager | F4: `NotificationHelper`, `AlertasWorker` | Notificaciones |
 
 ## 4. Arquitectura
 
 ```
-UI (Compose) → ViewModel (StateFlow) → RepositorioGalpones → { MonitorApi (Retrofit), Room }
+UI (Compose) → ViewModel (StateFlow) → RepositorioGalpones → { MonitorApi (Retrofit), DataStore }
                                                 ↑
                          AlertasWorker (WorkManager, cada 15 min)
 ```
@@ -51,7 +51,7 @@ UI (Compose) → ViewModel (StateFlow) → RepositorioGalpones → { MonitorApi 
 com.example.caso1
 ├── data/
 │   ├── api/         MonitorApi, ClienteApi, InterceptorConectividad, DTOs, ServidorSimulado (alternativa sin PC)
-│   ├── db/          Room: entidades, DAOs, AppDatabase
+│   ├── local/       DataStore tipado: DatosMonitoreo (monitoreo.json), registros guardados
 │   ├── model/       Modelos de dominio y Umbrales
 │   ├── repository/  RepositorioGalpones (interfaz) + GalponRepository
 │   └── SessionManager (DataStore), Sincronizador, MonitorConectividad
@@ -74,7 +74,7 @@ com.example.caso1
 
 ### 4.2 Estrategia offline (fuente única de verdad)
 
-Room es la única fuente que la UI observa (`Flow`). El `Sincronizador` descarga todo de la API y lo guarda en una transacción: si algo falla, Room no se toca. Sincroniza al abrir, al deslizar, al volver la red y cada 15 min. Sin conexión, la UI muestra lo guardado con un aviso y la hora de los datos.
+DataStore es la única fuente que la UI observa (`Flow`). El `Sincronizador` descarga todo de la API y lo guarda en un solo `updateData` (atómico): si algo falla, DataStore no se toca. Room se quitó porque la rúbrica del curso evalúa DataStore (persistencia avanzada fuera de alcance). Sincroniza al abrir, al deslizar, al volver la red y cada 15 min. Sin conexión, la UI muestra lo guardado con un aviso y la hora de los datos.
 
 ### 4.3 Navegación (Guía 10)
 
@@ -85,7 +85,7 @@ Room es la única fuente que la UI observa (`Flow`). El `Sincronizador` descarga
 ### 4.4 Estado y formularios (Guías 11 y 12)
 
 - Cada pantalla expone un único estado con `StateFlow` y se observa con `collectAsStateWithLifecycle()`.
-- F6 valida galpón, tipo de acción y descripción en el ViewModel; cada error se limpia al editar su campo. El texto se mantiene en memoria (no se lee de vuelta desde DataStore o Room en cada tecla, el problema del ejemplo de la Guía 12).
+- F6 valida galpón, tipo de acción y descripción en el ViewModel; cada error se limpia al editar su campo. El texto se mantiene en memoria (no se lee de vuelta desde DataStore en cada tecla, el problema del ejemplo de la Guía 12).
 
 ### 4.5 Diseño adaptable (Guía 9)
 
@@ -115,8 +115,7 @@ Se evalúan por separado temperatura y humedad; **el estado del galpón es el pe
 
 | Tipo | Qué cubre | Cómo correrlo |
 |------|-----------|---------------|
-| Unitarios (JVM) | Umbrales y bordes, cliente HTTP y conectividad, API simulada interna, validación y ViewModel de F6, sincronizador | `./gradlew testDebugUnitTest` (también en CI) |
-| Instrumentados | Repositorio: sin red, error 500 o servidor apagado → se siguen sirviendo los datos de Room | `./gradlew connectedDebugAndroidTest` |
+| Unitarios (JVM) | Umbrales y bordes, cliente HTTP y conectividad, API simulada interna, validación y ViewModel de F6, sincronizador, repositorio sobre DataStore (sin red, error 500 o servidor apagado → se siguen sirviendo los datos guardados; alertas, retención y persistencia) | `./gradlew testDebugUnitTest` (también en CI) |
 | API simulada | Endpoints, orden, 404, pico de calor y umbrales | `cd mock-api && npm test` |
 
 Las dependencias están en `gradle/libs.versions.toml`, sin versiones escritas a mano en `build.gradle.kts`.
@@ -125,7 +124,7 @@ Las dependencias están en `gradle/libs.versions.toml`, sin versiones escritas a
 
 | Riesgo | Mitigación |
 |--------|------------|
-| Conectividad intermitente | Room como fuente única, aviso con la hora de los datos y reconexión automática |
+| Conectividad intermitente | DataStore como fuente única, aviso con la hora de los datos y reconexión automática |
 | Permiso de notificaciones denegado | La alerta se ve igual dentro de la app, con contador en la barra |
 | WorkManager tarda (≥ 15 min) | Simulación de pico de calor en builds debug |
 | json-server no disponible en la demo | Compilar con `-Pcaso1.apiSimulada=true` |

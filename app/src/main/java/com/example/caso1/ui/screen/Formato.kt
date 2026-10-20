@@ -7,7 +7,7 @@ import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import com.example.caso1.R
-import com.example.caso1.data.db.GalponEntity
+import com.example.caso1.data.local.GalponEntity
 import com.example.caso1.data.model.EstadoGalpon
 import com.example.caso1.data.model.NivelAlerta
 import com.example.caso1.data.model.Rol
@@ -84,7 +84,7 @@ fun Rol.icono(): Int = when (this) {
 
 // ---------- Alertas y acciones ----------
 
-/** Código de causa guardado en Room ("TEMPERATURA_ALTA") → texto en strings.xml. */
+/** Código de causa guardado en DataStore ("TEMPERATURA_ALTA") → texto en strings.xml. */
 @StringRes
 fun tipoAlertaRes(tipo: String): Int = when (tipo) {
     "TEMPERATURA_ALTA" -> R.string.alerta_tipo_temperatura_alta
