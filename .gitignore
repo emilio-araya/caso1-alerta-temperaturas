@@ -35,4 +35,9 @@ google-services.json
 *.hprof
 
 # Capturas de revisión de diseño (locales)
-.impeccable/review/
+.impeccable/
+
+# Local tooling and course evaluation notes
+.atl/
+docs/guion-defensa.md
+docs/rubrica.md
